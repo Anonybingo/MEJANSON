@@ -1,0 +1,5 @@
+Save your photo in this folder as photo.jpg and reload the page.
+
+- Head and shoulders, portrait orientation, about 800 x 1100 px works best.
+- A PNG with a see-through background also works. Save it as photo.png and change
+  photo: "assets/photo.jpg"  to  photo: "assets/photo.png"  in js/data.js.

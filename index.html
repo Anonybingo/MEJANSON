@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Your Name | Portfolio</title>
+<meta name="description" content="A portfolio where every door opens onto something I build.">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 30V13a10 10 0 0 1 20 0v17z' fill='%23E7C170'/%3E%3Cpath d='M10 30V14a6 6 0 0 1 12 0v16z' fill='%230F1B26'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<noscript><p style="padding:24px;font:16px/1.5 system-ui,sans-serif">This portfolio needs JavaScript to show its doors. Please turn it on and reload.</p></noscript>
+<div id="site">
+<header class="nav" id="top">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Back to the top"><span class="plate" data-bind="initials">YN</span></a>
+    <nav aria-label="Sections"><a href="#doors">Doors</a><a href="#work">Work</a><a href="#story">Story</a><a href="#contact">Contact</a></nav>
+    <button class="bulb-btn" type="button" data-light aria-label="Switch the light" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2zM9.5 19.5h5v1a1.5 1.5 0 0 1-1.5 1.5h-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg></button>
+  </div>
+</header>
+<main>
+<section class="hero" aria-labelledby="hello">
+  <div class="sun" aria-hidden="true"></div>
+  <div class="lamp" id="lamp" aria-hidden="true">
+    <span class="wire"></span><span class="shade"></span><span class="bulb"></span><span class="cone"></span>
+    <span class="pull" id="pull"><span class="string"></span><span class="bead"></span><span class="hint">pull me</span></span>
+  </div>
+  <div class="wrap hero-in">
+    <div class="hero-copy">
+      <h1 id="hello">Hi, I’m <span data-bind="name">Your Name</span>.</h1>
+      <div class="board" id="board" aria-hidden="true" title="Click to change"></div>
+      <p class="sr-only" id="rolesSr"></p>
+      <p class="intro" data-bind="intro"></p>
+      <p class="cta"><a class="btn btn-solid" href="#work">See my work</a><a class="btn btn-ghost" href="#doors">Pick a door</a></p>
+      <p class="sign"><span class="dot"></span>Open for projects</p>
+    </div>
+    <figure class="portrait" id="portrait">
+      <div class="arch">
+        <img id="photo" width="760" height="1064" decoding="async" alt="">
+        <div class="ph" id="ph">
+          <svg viewBox="0 0 300 420" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><circle cx="150" cy="158" r="56"/><rect x="126" y="204" width="48" height="76" rx="14"/><path d="M14 420c0-92 52-150 136-150s136 58 136 150z"/></svg>
+          <button class="ph-btn" id="phBtn" type="button"><span>Add your photo</span><small>Save it as assets/photo.jpg to keep it</small></button>
+          <input id="phFile" type="file" accept="image/*" hidden>
+        </div>
+        <span class="shine" aria-hidden="true"></span>
+      </div>
+      <span class="sill" aria-hidden="true"></span>
+    </figure>
+  </div>
+  <div class="floor" aria-hidden="true"></div>
+</section>
+<section class="band doors" id="doors" aria-labelledby="doors-h">
+  <div class="wrap">
+    <h2 id="doors-h">Pick a door.</h2>
+    <p class="lede">Each one opens onto something I build. Click one to step inside.</p>
+    <div class="corridor" id="corridor" role="group" aria-label="Doors"></div>
+    <div class="behind idle" id="behind"></div>
+  </div>
+</section>
+<section class="band work" id="work" aria-labelledby="work-h">
+  <div class="wrap">
+    <h2 id="work-h">Things I’ve built.</h2>
+    <p class="lede">Real projects, with the code on GitHub where I can share it.</p>
+    <div class="stack" id="stack"></div>
+  </div>
+</section>
+<section class="band story" id="story" aria-labelledby="story-h">
+  <div class="wrap">
+    <h2 id="story-h">How I got here.</h2>
+    <p class="lede">The lights come on as you scroll.</p>
+    <ol class="lights" id="lights"></ol>
+  </div>
+</section>
+<section class="band contact" id="contact" aria-labelledby="contact-h">
+  <div class="wrap">
+    <div class="front">
+      <div>
+        <h2 id="contact-h">Got something to build?</h2>
+        <p>Press the bell to copy my email, or find me on GitHub.</p>
+        <p class="email" id="email" data-bind="email">yourname@example.com</p>
+        <p><a id="ghLink" href="https://github.com/Anonybingo" target="_blank" rel="noopener">github.com/Anonybingo</a></p>
+      </div>
+      <div class="ringer">
+        <button class="bell" id="bell" type="button" aria-label="Ring the bell to copy my email address"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a1.5 1.5 0 0 0-1.5 1.5v.6A6.5 6.5 0 0 0 5.5 10.5v3.2L4 16.5V18h16v-1.5l-1.5-2.8v-3.2a6.5 6.5 0 0 0-5-6.4v-.6A1.5 1.5 0 0 0 12 2zM9.8 19.5a2.2 2.2 0 0 0 4.4 0z"/></svg></button>
+        <small id="bellMsg" role="status"></small>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="foot"><div class="wrap"><span>Built by hand with HTML, CSS and JavaScript.</span><a href="#top">Back to the top</a></div></footer>
+</div>
+<div class="room" id="room" role="dialog" aria-modal="true" aria-labelledby="roomTitle" hidden>
+  <div class="room-scroll" id="roomScroll">
+    <div class="wrap room-in">
+      <div class="room-head">
+        <div>
+          <h2 id="roomTitle" tabindex="-1"></h2>
+          <p class="room-text" id="roomText"></p>
+        </div>
+        <div class="room-sign" id="roomSign" aria-hidden="true"></div>
+      </div>
+      <div class="room-cols">
+        <ul class="bl" id="roomPoints"></ul>
+        <ul class="chips" id="roomTools" aria-label="Tools"></ul>
+      </div>
+      <div class="room-stack" id="roomStack"></div>
+    </div>
+  </div>
+  <button class="back" id="back" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V10a7 7 0 0 1 14 0v11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path class="lf" d="M8.5 21V11.5l7-1.5v11z" fill="currentColor"/></svg><span>Back to all doors</span></button>
+  <button class="bulb-btn room-bulb" type="button" data-light aria-label="Switch the light" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a7 7 0 0 0-4 12.7V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.3A7 7 0 0 0 12 2zM9.5 19.5h5v1a1.5 1.5 0 0 1-1.5 1.5h-2a1.5 1.5 0 0 1-1.5-1.5z"/></svg></button>
+</div>
+<script src="js/data.js"></script>
+<script src="js/art.js"></script>
+<script src="js/render.js"></script>
+<script src="js/lamp.js"></script>
+<script src="js/flap.js"></script>
+<script src="js/misc.js"></script>
+<script src="js/rooms.js"></script>
+</body>
+</html>
