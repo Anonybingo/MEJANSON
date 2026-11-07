@@ -45,6 +45,9 @@ ul,ol{margin:0;padding:0;list-style:none}
 .nav nav{margin-left:auto;display:flex;gap:clamp(10px,2.6vw,30px)}
 .nav nav a{color:var(--ink);text-decoration:none;font:600 .95rem/1 var(--display);padding:8px 2px;border-bottom:2px solid transparent}
 .nav nav a:hover{border-color:var(--brass)}
+/* a longer name on the plate needs the bar a little tighter on small phones */
+@media(max-width:420px){.nav-in{gap:8px}.plate{font-size:.92rem;letter-spacing:.05em}.nav nav{gap:9px}.nav nav a{font-size:.86rem;padding:8px 0}}
+@media(max-width:350px){.plate{font-size:.82rem;letter-spacing:.02em;padding:.22em .5em}.nav nav{gap:6px}.nav nav a{font-size:.8rem}.nav-in{gap:6px}}
 .bulb-btn{appearance:none;border:0;background:none;color:var(--ink);cursor:pointer;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;padding:0}
 .bulb-btn:hover{background:var(--rule)}
 .bulb-btn svg{width:22px;height:22px;fill:currentColor;transition:filter .4s}
@@ -55,8 +58,8 @@ ul,ol{margin:0;padding:0;list-style:none}
 /* hero */
 .hero{position:relative;overflow:clip;padding-block:32px 0;background:var(--wall);transition:background-color .5s ease}
 @media(min-width:900px){.hero{padding-top:104px}}
-.hero-in{position:relative;z-index:2;display:grid;grid-template-columns:minmax(0,1fr);row-gap:clamp(18px,3vw,28px)}
-.hero-copy{display:grid;gap:clamp(22px,3vw,34px);justify-items:start;align-content:start;padding-bottom:clamp(64px,9vw,120px)}
+.hero-in{position:relative;display:grid;grid-template-columns:minmax(0,1fr);row-gap:clamp(18px,3vw,28px)}
+.hero-copy{position:relative;z-index:2;display:grid;gap:clamp(22px,3vw,34px);justify-items:start;align-content:start;padding-bottom:clamp(64px,9vw,120px)}
 .hero h1{font-size:clamp(2.7rem,1.1rem + 6.6vw,6.6rem);max-width:11ch;line-height:.98}
 .intro{font-size:1.18em;color:var(--ink-soft);max-width:46ch}
 .cta{display:flex;flex-wrap:wrap;gap:12px}
@@ -65,17 +68,21 @@ ul,ol{margin:0;padding:0;list-style:none}
 .sun{position:absolute;inset:0;pointer-events:none;opacity:calc(1 - var(--glow));background:linear-gradient(112deg,transparent 18%,rgba(255,255,255,.55) 30%,rgba(255,255,255,.12) 44%,transparent 56%),linear-gradient(112deg,transparent 54%,rgba(255,255,255,.35) 62%,transparent 72%);transition:opacity .6s ease}
 .floor{position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(var(--wall-2),color-mix(in srgb,var(--wall-2) 78%,#000));border-top:1px solid var(--rule)}
 /* portrait: you, standing in a lit doorway */
-.portrait{--pb:clamp(6px,.9vw,10px);--pf:color-mix(in srgb,var(--brass) 62%,var(--paper));position:relative;margin:0;order:-1;justify-self:start;width:min(46vw,190px)}
-.arch{position:relative;aspect-ratio:5/7;overflow:hidden;border:var(--pb) solid var(--pf);border-bottom:0;border-radius:999px 999px 0 0;background:radial-gradient(ellipse 90% 70% at 50% 100%,#FFE9B8,var(--lamp) 38%,#B5701F 76%,#3A250D);box-shadow:0 34px 46px -30px var(--shadow)}
+.portrait{--pb:clamp(6px,.9vw,10px);--pf:color-mix(in srgb,var(--brass) 62%,var(--paper));position:relative;z-index:1;margin:0;order:-1;justify-self:start;width:min(46vw,190px)}
+/* the doorway is dark inside, so the dust that makes your portrait glows against it in light and dark mode alike */
+.arch{position:relative;aspect-ratio:5/7;overflow:hidden;border:var(--pb) solid var(--pf);border-bottom:0;border-radius:999px 999px 0 0;background:radial-gradient(ellipse 80% 50% at 50% 108%,rgba(255,170,80,.26),transparent 72%),radial-gradient(ellipse 60% 38% at 80% 0,rgba(255,196,107,.12),transparent 70%),linear-gradient(#090C14,#120F18 62%,#1B120B);box-shadow:0 34px 46px -30px var(--shadow),inset 0 0 38px rgba(0,0,0,.55)}
 .arch img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;opacity:0;transition:opacity .6s ease}
 .portrait.has-photo img{opacity:1}
+.portrait.dust-on.has-photo img{opacity:0}
 .portrait.no-photo img{display:none}
+/* the dust: one canvas over the whole hero, above the doorway and below the words, so it can leave the frame when you scroll */
+.dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 .shine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(80% 60% at 90% 0,rgba(255,196,107,.42),transparent 70%);opacity:var(--glow);transition:opacity .6s ease}
 .sill{display:block;height:12px;margin-inline:calc(var(--pb)*-1);border-radius:2px;background:linear-gradient(var(--brass-hi),var(--brass));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 3px 6px rgba(0,0,0,.28)}
 .ph{position:absolute;inset:0;opacity:0;transition:opacity .4s ease}
 .portrait.no-photo .ph{opacity:1}
 .portrait.has-photo .ph{display:none}
-.ph svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84%;fill:rgba(58,36,10,.84)}
+.ph svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84%;fill:rgba(255,214,150,.2)}
 .ph-btn{appearance:none;position:absolute;left:50%;bottom:7%;transform:translateX(-50%);display:grid;gap:.3em;justify-items:center;width:max-content;max-width:88%;padding:.6em 1.1em;border-radius:999px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:700 .92rem/1 var(--display);text-align:center;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:background-color .4s,color .4s,border-color .4s,box-shadow .4s}
 .ph-btn small{font:400 .74rem/1.25 var(--text);color:var(--ink-soft)}
 @media(max-width:899px){.ph-btn small{display:none}.ph-btn{font-size:.8rem;padding:.55em .9em}}

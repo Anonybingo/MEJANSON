@@ -1,10 +1,11 @@
 /* Edit this object to make the page yours. Everything on the page is filled in from here. */
 const PROFILE = {
-  name: "Your Name",
+  name: "JANSON",
   email: "yourname@example.com",
   github: "https://github.com/Anonybingo",
-  // Your portrait. Save your photo as assets/photo.jpg (or point this at another file in assets/).
-  // A head-and-shoulders photo in portrait orientation works best. A PNG with a see-through background works too.
+  // Your portrait. The page turns it into dust that gathers into your face. Save your photo as assets/photo.jpg
+  // (or point this at another file in assets/). A head-and-shoulders photo against a plain light backdrop works best.
+  // A PNG with a see-through background works too.
   photo: "assets/photo.jpg",
   photoAlt: "", // leave empty and the page says "Portrait of <your name>"
   intro: "I build websites and web apps with plain HTML, CSS and JavaScript, add Firebase when people need accounts, and I am taking my first one to phones now.",

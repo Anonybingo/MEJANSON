@@ -1,7 +1,7 @@
 /* Fill the page from PROFILE */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const initials = n => n.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('') || 'ME';
+const initials = n => { const w = n.split(/\s+/).filter(Boolean); return !w.length ? 'ME' : w.length === 1 && w[0].length <= 8 ? w[0].toUpperCase() : w.slice(0, 2).map(x => x[0].toUpperCase()).join(''); };
 const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 PROFILE.doors.forEach(d => { d.slug = slug(d.plate || d.title); });
 if (PROFILE.name && PROFILE.name !== 'Your Name') document.title = PROFILE.name + ' | Portfolio';
@@ -9,15 +9,25 @@ document.querySelectorAll('[data-bind]').forEach(el => { const k = el.dataset.bi
 $('rolesSr').textContent = 'Roles: ' + PROFILE.roles.map(r => r.toLowerCase()).join(', ') + '.';
 { const a = $('ghLink'); a.href = PROFILE.github; a.textContent = PROFILE.github.replace(/^https?:\/\//, ''); }
 
-/* your portrait. A missing photo shows a silhouette you can click to preview a picture from your computer */
+/* your portrait. 78-dust.js turns it into dust. The plain picture stays under the dust: it is what screen readers get, and what shows if the dust cannot run.
+   If assets/photo.jpg is missing, the built-in copy (70-photo.js) is used; with no picture at all a silhouette shows, and you can click it to preview a picture from your computer */
 {
   const fig = $('portrait'), img = $('photo'), pick = $('phFile');
+  const backup = typeof PORTRAIT_FALLBACK === 'string' ? PORTRAIT_FALLBACK : '';
   img.alt = PROFILE.photoAlt || 'Portrait of ' + PROFILE.name;
   img.addEventListener('load', () => { fig.classList.remove('no-photo'); fig.classList.add('has-photo'); });
-  img.addEventListener('error', () => { fig.classList.remove('has-photo'); fig.classList.add('no-photo'); });
-  img.src = PROFILE.photo;
+  img.addEventListener('error', () => {
+    if (backup && img.getAttribute('src') !== backup) { img.src = backup; return; }
+    fig.classList.remove('has-photo'); fig.classList.add('no-photo');
+  });
+  img.src = PROFILE.photo || backup;
   $('phBtn').addEventListener('click', () => pick.click());
-  pick.addEventListener('change', () => { const f = pick.files && pick.files[0]; if (f) img.src = URL.createObjectURL(f); });
+  pick.addEventListener('change', () => {
+    const f = pick.files && pick.files[0]; if (!f) return;
+    const url = URL.createObjectURL(f);
+    img.src = url;
+    if (window.dustPhoto) window.dustPhoto(url);
+  });
 }
 
 const byId = id => PROFILE.projects.find(p => p.id === id);
