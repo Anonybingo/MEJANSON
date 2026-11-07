@@ -2,7 +2,7 @@
 
 A portfolio where every door opens onto something you build. Click a door and the camera pushes through the doorway into a room. The button at the bottom left walks you back out to all the doors.
 
-Your portrait stands in a dark doorway and is made of golden dust. The dust flies in and gathers into your face, the mouse pushes it about, and it blows apart when you scroll down and gathers again when you scroll back up.
+Your portrait has no frame: it is made of dust that sits straight on the page. The dust flies in and gathers into your face, the mouse pushes it about, and it blows apart when you scroll down and gathers again when you scroll back up. On a dark page the dust glows gold. On a light page it turns into dark ink, like a pen stipple. Pull the lamp and the dust gathers again in the other look.
 
 It is plain HTML, CSS and JavaScript. No build step, nothing to install.
 
@@ -21,7 +21,7 @@ Everything on the page is filled in from one file: `js/data.js`.
 
 ## Your portrait
 
-The photo is `assets/photo.jpg`. The page cuts you out from the backdrop, lifts the tones so a dark face still shows its eyes, nose and mouth, and turns it into thousands of dots.
+The photo is `assets/photo.jpg`. The page cuts you out from the backdrop, lifts the tones so a dark face still shows its eyes, nose and mouth, and turns it into thousands of dots. The plain photo is never shown on the page; it stays hidden underneath for screen readers, and appears only if the dust cannot run.
 
 To use another photo, replace `assets/photo.jpg` and reload.
 
@@ -42,7 +42,7 @@ Push the folder to GitHub and turn on GitHub Pages (Settings, Pages, branch `mai
 | `index.html` | The page structure |
 | `css/style.css` | All the looks, light and dark |
 | `js/data.js` | Your words, photo and projects. Edit this one |
-| `js/dust.js` | The dust portrait: cuts out your photo, makes the dots, flies them in, scatters them on scroll |
+| `js/dust.js` | The dust portrait: cuts out your photo, makes the dots (a glowing set and an ink set), flies them in, scatters them on scroll |
 | `js/photo.js` | A built-in copy of your photo, for when the page is opened by double-click |
 | `js/rooms.js` | The walk-through-the-door animation and the back button |
 | `js/render.js` | Builds the doors, the project cards and the story |

@@ -5,10 +5,10 @@
    lifted, so a dark face still shows its eyes, nose and mouth.
    The plain photo stays in the page under the dust (for screen readers, and as the picture if the dust cannot run). */
 (() => {
-  const hero = document.querySelector('.hero'), fig = $('portrait'), arch = fig && fig.querySelector('.arch'), site = $('site');
-  if (!hero || !arch || !document.createElement('canvas').getContext) return;
+  const hero = document.querySelector('.hero'), fig = $('portrait'), pic = fig && fig.querySelector('.pic'), site = $('site');
+  if (!hero || !pic || !document.createElement('canvas').getContext) return;
 
-  const PW = 360, PH = 504;                              // the brightness map is 5:7, the shape of the doorway
+  const PW = 360, PH = 504;                              // the brightness map is 5:7, the shape of the picture box
   const NB = 8, TAU = Math.PI * 2;                       // brightness buckets, one fill each
   const TL = { fade: 0.7, converge: 0.25, end: 3.4 };    // seconds: dust fades in, starts flying, everything has landed
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -23,7 +23,7 @@
   /* ---------- 1. the picture becomes a brightness map ---------- */
   const loadImage = src => new Promise((ok, bad) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => bad(new Error('picture')); im.src = src; });
 
-  /* the picture drawn into the doorway's 5:7 box, filling it and anchored near the top; getImageData throws if the browser
+  /* the picture drawn into a 5:7 box, filling it and anchored near the top; getImageData throws if the browser
      will not let a page read this picture (a file opened from disk), and the caller then tries the built-in copy */
   async function pixels(src) {
     const im = await loadImage(src), c = document.createElement('canvas');
@@ -65,9 +65,10 @@
     return b;
   }
 
-  /* RGBA pixels -> a map of how much dust each spot gets (0 to 1): nothing on the backdrop, a little on dark hair and clothes,
-     most on the lit parts of the face */
-  function densityMap(px) {
+  /* RGBA pixels -> two maps of how much dust each spot gets (0 to 1). Nothing on the backdrop; the sides and the bottom melt into the page.
+     glow (dark page): dense where the photo is bright, so the lit face shines and dark hair and clothes are a faint outline.
+     ink (light page): dense where the photo is dark, like a pen stipple, so hair and shirt are solid and the face is shaded. */
+  function densityMaps(px) {
     const n = PW * PH;
     // the backdrop colour: the middle value of the border pixels
     const ch = [[], [], []];
@@ -127,27 +128,29 @@
     const pct = q => { let s = 0; for (let k = 0; k < 256; k++) { s += hist[k]; if (s >= q * cnt) return k / 255; } return 1; };
     let lo = cnt ? pct(0.03) : 0, hi = cnt ? pct(0.985) * 1.12 : 1;     // the person's own light range is spread over 0..1
     if (hi < lo + 0.2) hi = lo + 0.2;
-    const Dg = new Float32Array(n);
-    for (let i = 0; i < n; i++) Dg[i] = clamp((Lc[i] - lo) / (hi - lo), 0, 1);
-    const soft = boxBlur(boxBlur(boxBlur(Dg, PW, PH, 7), PW, PH, 7), PW, PH, 7);
-    const dens = new Float32Array(n), cy = 0.5 * PW / PH;
+    const Dg = new Float32Array(n), Di = new Float32Array(n);
+    for (let i = 0; i < n; i++) { Dg[i] = clamp((Lc[i] - lo) / (hi - lo), 0, 1); Di[i] = 1 - Dg[i]; }
+    const blur = a => boxBlur(boxBlur(boxBlur(a, PW, PH, 7), PW, PH, 7), PW, PH, 7), softG = blur(Dg), softI = blur(Di);
+    const glow = new Float32Array(n), ink = new Float32Array(n);
     for (let y = 0; y < PH; y++) for (let x = 0; x < PW; x++) {
       const i = y * PW + x, u = x / PW, v = y / PH;
-      const local = clamp(Dg[i] + 1.25 * (Dg[i] - soft[i]), 0, 1);                      // eyes, brows, nose and mouth stand out
-      const ex = (u - 0.5) / 0.62, ey = (v - 0.40) / 0.52;                              // lamp light: strongest on the face, fading to the shoulders
-      let lamp = clamp(1 - (ex * ex + ey * ey), 0, 1); lamp = 0.42 + 0.58 * lamp * lamp * (3 - 2 * lamp);
-      let d = clamp((dist[i] - 1) / 2.5, 0, 1) * (0.1 + 0.9 * local * lamp);            // a little dust on dark hair and clothes keeps the outline
-      if (v < cy) { const dx = (u - 0.5) / 0.5, dy = (v - cy) / cy; if (dx * dx + dy * dy > 0.93) d = 0; }   // stay inside the doorway's rounded top
-      dens[i] = d;
+      const ex = (u - 0.5) / 0.62, ey = (v - 0.40) / 0.52;                              // lamp light: strongest on the face, fading toward the shoulders
+      let lamp = clamp(1 - (ex * ex + ey * ey), 0, 1); lamp = lamp * lamp * (3 - 2 * lamp);
+      const cut = clamp((dist[i] - 1) / 2.5, 0, 1)                                      // the edge against the backdrop fades out
+        * smooth(0, 0.1, u) * smooth(0, 0.1, 1 - u) * (1 - smooth(0.9, 1, v));          // and the sides and the bottom melt into the page
+      const lg = clamp(Dg[i] + 1.25 * (Dg[i] - softG[i]), 0, 1);                        // eyes, brows, nose and mouth stand out
+      const li = clamp(Di[i] + 1.25 * (Di[i] - softI[i]), 0, 1);
+      glow[i] = cut * (0.1 + 0.9 * lg * (0.42 + 0.58 * lamp));
+      ink[i] = cut * (0.05 + 0.95 * li * (0.7 + 0.3 * lamp));
     }
-    return dens;
+    return { glow, ink };
   }
 
   /* ---------- 2. specks on the map, more of them where it is brighter ---------- */
-  function sample(dens, n, rand) {                       // -> [u, v, brightness] for n specks, u and v in 0..1
+  function sample(dens, n, rand, wexp) {                 // -> [u, v, strength] for n specks, u and v in 0..1
     const m = PW * PH, cdf = new Float64Array(m);
     let sum = 0;
-    for (let i = 0; i < m; i++) { if (dens[i] > 0.02) sum += Math.pow(dens[i], 1.25); cdf[i] = sum; }
+    for (let i = 0; i < m; i++) { if (dens[i] > 0.02) sum += Math.pow(dens[i], wexp); cdf[i] = sum; }
     const pts = new Float32Array(n * 3);
     if (!sum) return pts;
     for (let k = 0; k < n; k++) {
@@ -176,18 +179,29 @@
     ready: false, broken: false, visible: true, hold: false, T: 0, last: 0, lastY: -1, quality: 1, cost: 4, raf: 0, timer: 0,
     W: 0, H: 0, dpr: 1, R: 600, source: '', ptr: { x: -9999, y: -9999, on: false }, kick: null, moving: false
   };
-  const colors = Array.from({ length: NB }, (_, k) => { const t = k / (NB - 1), c = (a, b) => Math.round(a + (b - a) * t); return `rgb(${c(172, 255)},${c(120, 243)},${c(54, 210)})`; });
   const bAlpha = Array.from({ length: NB }, (_, k) => 0.3 + 0.7 * Math.pow(k / (NB - 1), 0.9));
+  /* glow: light dust on a dark page (the default in dark mode). ink: dark dust on a light page. The lamp switches between them. */
+  const PAL = {
+    glow: { from: [172, 120, 54], to: [255, 243, 210], motes: 'rgb(255,226,160)', wexp: 1.25 },
+    ink: { from: [176, 122, 52], to: [30, 20, 8], motes: 'rgb(112,78,32)', wexp: 1 }
+  };
+  const isDark = () => { const t = document.documentElement.dataset.theme; return t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; };
+  let maps = null, mode = '', colors = [];
+  function setMode(m) {
+    mode = m;
+    const p = PAL[m], mix = (k, c) => Math.round(p.from[c] + (p.to[c] - p.from[c]) * k / (NB - 1));
+    colors = Array.from({ length: NB }, (_, k) => `rgb(${mix(k, 0)},${mix(k, 1)},${mix(k, 2)})`);
+  }
 
   let N = 0, M = 0, box = null, groups = [];
   let u0, v0, tx, ty, delay, dur, swirl, size, phase, freq, ddx, ddy, damp, bucket;   // fixed for each speck
   let sx, sy, gx, gy, qx, qy, ox, oy, vx, vy, mscale = 1;                            // placed by layout(); ox..vy is the pointer's push
 
-  function build(dens) {
-    const rand = rng(5), w = arch.clientWidth || 360;
-    N = clamp(Math.round(w * w * 1.4 * 0.055 * Math.pow(380 / w, 0.6)), 2600, coarse ? 9000 : 12000);   // about one speck for every 18 px of doorway, more on small screens so the face keeps its detail
+  function build() {
+    const rand = rng(5), w = pic.clientWidth || 360;
+    N = clamp(Math.round(w * w * 1.4 * 0.055 * Math.pow(380 / w, 0.6)), 2600, coarse ? 9000 : 12000);   // about one speck for every 18 px of the picture box, more on small screens so the face keeps its detail
     M = coarse ? 36 : 70;                                                          // motes that drift in the light and never settle
-    const pts = sample(dens, N, rand), TOT = N + M;
+    const pts = sample(maps[mode], N, rand, PAL[mode].wexp), TOT = N + M;
     const f = n => new Float32Array(n);
     u0 = f(TOT); v0 = f(TOT); tx = f(N); ty = f(N); delay = f(N); dur = f(N); swirl = f(N); size = f(TOT); phase = f(TOT); freq = f(TOT);
     ddx = f(TOT); ddy = f(TOT); damp = f(TOT); bucket = new Uint8Array(TOT);
@@ -209,10 +223,10 @@
     for (let i = N; i < TOT; i++) { bucket[i] = 0; size[i] = 0.9 + rand() * 0.9; }
   }
 
-  /* where the doorway is, and so where every speck lands and starts (the canvas covers the whole hero so that dust can leave the frame) */
+  /* where the picture box is, and so where every speck lands and starts (the canvas covers the whole hero so that dust can leave the frame) */
   function layout() {
     if (!N) return;
-    const hr = hero.getBoundingClientRect(), ar = arch.getBoundingClientRect(), bw = parseFloat(getComputedStyle(arch).borderTopWidth) || 0;
+    const hr = hero.getBoundingClientRect(), ar = pic.getBoundingClientRect(), bw = 0;
     const W = hero.clientWidth, H = hero.clientHeight;
     S.dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(W * S.dpr); canvas.height = Math.round(H * S.dpr);
@@ -235,7 +249,7 @@
       }
     }
     groups = lists.map(l => Uint32Array.from(l));
-    // scrolling this far blows the dust away completely: about when the doorway has left the screen
+    // scrolling this far blows the dust away completely: about when the portrait has left the screen
     S.R = clamp(ar.bottom + scrollY - 0.12 * innerHeight, 220, 0.9 * innerHeight);
     if (still || !S.visible) draw(performance.now(), 0.016);
   }
@@ -272,7 +286,7 @@
       alpha *= fade;
       if (alpha < 0.01) continue;
       ctx.globalAlpha = Math.min(1, alpha);
-      ctx.fillStyle = amb ? 'rgb(255,226,160)' : colors[g];
+      ctx.fillStyle = amb ? PAL[mode].motes : colors[g];
       ctx.beginPath();
       for (let k = 0; k < len; k++) {
         const i = list[k];
@@ -318,7 +332,7 @@
     S.moving = agitated;
   }
 
-  /* ---------- 4. the loop: only while the doorway is on screen, and only fast while something moves ---------- */
+  /* ---------- 4. the loop: only while the portrait is on screen, and only fast while something moves ---------- */
   function wake() {
     if (!S.ready || S.broken || still || !S.visible) return;
     if (S.timer) { clearTimeout(S.timer); S.timer = 0; }
@@ -348,12 +362,13 @@
 
   /* ---------- 5. start ---------- */
   async function start(list) {
-    let dens = null;
+    let found = null;
     for (const src of list) {
-      try { dens = densityMap(await pixels(src)); S.source = src.slice(0, 40); break; } catch (e) { /* not readable here: try the next picture */ }
+      try { found = densityMaps(await pixels(src)); S.source = src.slice(0, 40); break; } catch (e) { /* not readable here: try the next picture */ }
     }
-    if (!dens) return fail();
-    try { build(dens); } catch (err) { console.error('dust:', err); return fail(); }
+    if (!found) return fail();
+    maps = found;
+    try { setMode(isDark() ? 'glow' : 'ink'); build(); } catch (err) { console.error('dust:', err); return fail(); }
     if (!canvas.isConnected) hero.insertBefore(canvas, hero.querySelector('.hero-in'));   // coming back after a failed first try
     S.broken = false; S.ready = true; S.T = still ? TL.end + 1 : 0; S.last = 0; agitated = false;
     fig.classList.add('dust-on');
@@ -363,24 +378,36 @@
 
   let queued = 0;
   const relayout = () => { if (queued) return; queued = requestAnimationFrame(() => { queued = 0; layout(); wake(); }); };
-  if ('ResizeObserver' in window) { const ro = new ResizeObserver(relayout); ro.observe(hero); ro.observe(arch); } else addEventListener('resize', relayout);
+  if ('ResizeObserver' in window) { const ro = new ResizeObserver(relayout); ro.observe(hero); ro.observe(pic); } else addEventListener('resize', relayout);
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(([e]) => { S.visible = e.isIntersecting; if (S.visible) { S.last = 0; wake(); } }, { rootMargin: '300px 0px' }).observe(fig);
   }
+  /* pulling the lamp (or the system switching to light or dark) changes the page, so the dust gathers again in the look that suits it */
+  function retheme() {
+    const m = isDark() ? 'glow' : 'ink';
+    if (!S.ready || S.broken || m === mode) return;
+    try { setMode(m); build(); } catch (err) { console.error('dust:', err); return fail(); }
+    S.T = still ? TL.end + 1 : 0; S.last = 0; agitated = false;
+    layout(); wake();
+  }
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  const dark = matchMedia('(prefers-color-scheme: dark)');
+  if (dark.addEventListener) dark.addEventListener('change', retheme);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { S.last = 0; wake(); } });
   if (!still) {
     addEventListener('scroll', wake, { passive: true });
     hero.addEventListener('pointermove', e => { S.ptr.x = e.clientX; S.ptr.y = e.clientY; S.ptr.on = e.pointerType === 'mouse' || e.pointerType === 'pen'; wake(); }, { passive: true });
     hero.addEventListener('pointerleave', () => { S.ptr.on = false; wake(); });
-    fig.addEventListener('pointerdown', e => {           // a tap or click on the doorway throws the dust, which then settles back
+    fig.addEventListener('pointerdown', e => {           // a tap or click on the portrait throws the dust, which then settles back
       const hr = canvas.getBoundingClientRect();
       S.kick = { x: e.clientX - hr.left, y: e.clientY - hr.top, r: clamp((box ? box.w : 360) * 0.6, 140, 260), strength: 520 }; agitated = true; wake();
     });
   }
 
+  fig.addEventListener('dragstart', e => e.preventDefault());   // nothing in the portrait can be picked up and carried away
   fig.classList.add('dust-on');                          // hides the plain photo from the very first paint; removed again if the dust fails
-  window.__dust = { S, restart: list => start(list) };
+  window.__dust = { S, restart: list => start(list), get mode() { return mode; } };
   window.dustPhoto = url => start([url]);                // a picture picked from the computer (see 72-render.js)
   start([PROFILE.photo, typeof PORTRAIT_FALLBACK === 'string' ? PORTRAIT_FALLBACK : ''].filter(Boolean));
 })();

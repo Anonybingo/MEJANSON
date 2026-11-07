@@ -67,22 +67,22 @@ ul,ol{margin:0;padding:0;list-style:none}
 .sign .dot{width:.7em;height:.7em;border-radius:50%;background:var(--d2);box-shadow:0 0 0 3px color-mix(in srgb,var(--d2) 28%,transparent)}
 .sun{position:absolute;inset:0;pointer-events:none;opacity:calc(1 - var(--glow));background:linear-gradient(112deg,transparent 18%,rgba(255,255,255,.55) 30%,rgba(255,255,255,.12) 44%,transparent 56%),linear-gradient(112deg,transparent 54%,rgba(255,255,255,.35) 62%,transparent 72%);transition:opacity .6s ease}
 .floor{position:absolute;left:0;right:0;bottom:0;height:18px;background:linear-gradient(var(--wall-2),color-mix(in srgb,var(--wall-2) 78%,#000));border-top:1px solid var(--rule)}
-/* portrait: you, standing in a lit doorway */
-.portrait{--pb:clamp(6px,.9vw,10px);--pf:color-mix(in srgb,var(--brass) 62%,var(--paper));position:relative;z-index:1;margin:0;order:-1;justify-self:start;width:min(46vw,190px)}
-/* the doorway is dark inside, so the dust that makes your portrait glows against it in light and dark mode alike */
-.arch{position:relative;aspect-ratio:5/7;overflow:hidden;border:var(--pb) solid var(--pf);border-bottom:0;border-radius:999px 999px 0 0;background:radial-gradient(ellipse 80% 50% at 50% 108%,rgba(255,170,80,.26),transparent 72%),radial-gradient(ellipse 60% 38% at 80% 0,rgba(255,196,107,.12),transparent 70%),linear-gradient(#090C14,#120F18 62%,#1B120B);box-shadow:0 34px 46px -30px var(--shadow),inset 0 0 38px rgba(0,0,0,.55)}
-.arch img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;opacity:0;transition:opacity .6s ease}
+/* portrait: you, made of dust. There is no frame: the dust sits straight on the page. It cannot be selected or dragged away */
+.portrait{position:relative;z-index:1;margin:0;order:-1;justify-self:start;width:min(46vw,190px);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.pic{position:relative;aspect-ratio:5/7}
+/* the plain photo only shows if the dust cannot run */
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 12%;border-radius:18px;opacity:0;transition:opacity .6s ease;-webkit-user-drag:none;-webkit-user-select:none;user-select:none}
 .portrait.has-photo img{opacity:1}
 .portrait.dust-on.has-photo img{opacity:0}
+/* while the dust is on, the hidden photo ignores the mouse, so nobody can grab it */
+.portrait.dust-on img{pointer-events:none}
 .portrait.no-photo img{display:none}
-/* the dust: one canvas over the whole hero, above the doorway and below the words, so it can leave the frame when you scroll */
+/* the dust: one canvas over the whole hero, under the words, so it can leave the picture's box when you scroll */
 .dust{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
-.shine{position:absolute;inset:0;pointer-events:none;background:radial-gradient(80% 60% at 90% 0,rgba(255,196,107,.42),transparent 70%);opacity:var(--glow);transition:opacity .6s ease}
-.sill{display:block;height:12px;margin-inline:calc(var(--pb)*-1);border-radius:2px;background:linear-gradient(var(--brass-hi),var(--brass));box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 3px 6px rgba(0,0,0,.28)}
-.ph{position:absolute;inset:0;opacity:0;transition:opacity .4s ease}
+.ph{position:absolute;inset:0;opacity:0;border:2px dashed var(--rule);border-radius:18px;transition:opacity .4s ease}
 .portrait.no-photo .ph{opacity:1}
 .portrait.has-photo .ph{display:none}
-.ph svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84%;fill:rgba(255,214,150,.2)}
+.ph svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:84%;fill:var(--rule)}
 .ph-btn{appearance:none;position:absolute;left:50%;bottom:7%;transform:translateX(-50%);display:grid;gap:.3em;justify-items:center;width:max-content;max-width:88%;padding:.6em 1.1em;border-radius:999px;border:2px solid var(--ink);background:var(--paper);color:var(--ink);font:700 .92rem/1 var(--display);text-align:center;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:background-color .4s,color .4s,border-color .4s,box-shadow .4s}
 .ph-btn small{font:400 .74rem/1.25 var(--text);color:var(--ink-soft)}
 @media(max-width:899px){.ph-btn small{display:none}.ph-btn{font-size:.8rem;padding:.55em .9em}}
