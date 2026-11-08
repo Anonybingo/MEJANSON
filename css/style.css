@@ -15,8 +15,8 @@
   --text:"Newsreader",Georgia,"Times New Roman",serif;
   --flap:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--wall:#0D1220;--wall-2:#151D31;--paper:#17213A;--ink:#F2EDE3;--ink-soft:#AEB7C6;--rule:rgba(242,237,227,.16);--brass:#D9A441;--brass-hi:#F6D58A;--link:#FFC46B;--cta:#FFC46B;--cta-fg:#1A1206;--glow:1;--shadow:rgba(0,0,0,.55);--flap-bg:#0A0D16;--flap-fg:#FFD99A;--d1:#5675FF;--d2:#26AE9F;--d3:#B866C4;--d4:#FF7A5F;color-scheme:dark;}}
-:root[data-theme="dark"]{--wall:#0D1220;--wall-2:#151D31;--paper:#17213A;--ink:#F2EDE3;--ink-soft:#AEB7C6;--rule:rgba(242,237,227,.16);--brass:#D9A441;--brass-hi:#F6D58A;--link:#FFC46B;--cta:#FFC46B;--cta-fg:#1A1206;--glow:1;--shadow:rgba(0,0,0,.55);--flap-bg:#0A0D16;--flap-fg:#FFD99A;--d1:#5675FF;--d2:#26AE9F;--d3:#B866C4;--d4:#FF7A5F;color-scheme:dark;}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--wall:#0D1220;--wall-2:#151D31;--paper:#17213A;--ink:#F2EDE3;--ink-soft:#AEB7C6;--rule:rgba(242,237,227,.16);--brass:#D9A441;--brass-hi:#F6D58A;--link:#FFC46B;--cta:#FFC46B;--cta-fg:#1A1206;--glow:1;--shadow:rgba(0,0,0,.55);--flap-bg:#0A0D16;--flap-fg:#FFD99A;--d1:#5675FF;--d2:#26AE9F;--d3:#B866C4;--d4:#FF7A5F;color-scheme:dark;--g-fill:rgba(20,28,52,.42);--g-fill-2:rgba(14,21,40,.7);--g-fill-hi:rgba(38,52,90,.56);--g-chip:rgba(255,255,255,.08);--g-rim:rgba(255,238,205,.52);--g-rim-2:rgba(255,238,205,.17);--g-line:rgba(255,255,255,.075);--g-shine:rgba(255,236,200,.15);--g-sink:rgba(0,0,0,.5);--g-sheen:rgba(255,226,170,.17);--g-shadow:rgba(0,0,0,.66);--g-ts1:rgba(0,0,0,.5);--g-ts2:rgba(0,0,0,.72);--g-blur:20px;--g-sat:1.5;--g-fill-3:rgba(16,24,46,.6);}}
+:root[data-theme="dark"]{--wall:#0D1220;--wall-2:#151D31;--paper:#17213A;--ink:#F2EDE3;--ink-soft:#AEB7C6;--rule:rgba(242,237,227,.16);--brass:#D9A441;--brass-hi:#F6D58A;--link:#FFC46B;--cta:#FFC46B;--cta-fg:#1A1206;--glow:1;--shadow:rgba(0,0,0,.55);--flap-bg:#0A0D16;--flap-fg:#FFD99A;--d1:#5675FF;--d2:#26AE9F;--d3:#B866C4;--d4:#FF7A5F;color-scheme:dark;--g-fill:rgba(20,28,52,.42);--g-fill-2:rgba(14,21,40,.7);--g-fill-hi:rgba(38,52,90,.56);--g-chip:rgba(255,255,255,.08);--g-rim:rgba(255,238,205,.52);--g-rim-2:rgba(255,238,205,.17);--g-line:rgba(255,255,255,.075);--g-shine:rgba(255,236,200,.15);--g-sink:rgba(0,0,0,.5);--g-sheen:rgba(255,226,170,.17);--g-shadow:rgba(0,0,0,.66);--g-ts1:rgba(0,0,0,.5);--g-ts2:rgba(0,0,0,.72);--g-blur:20px;--g-sat:1.5;--g-fill-3:rgba(16,24,46,.6);}
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:84px}
 body{margin:0;background:var(--wall);color:var(--ink);font-family:var(--text);font-size:clamp(1.0625rem,1rem + .22vw,1.1875rem);line-height:1.62;overflow-x:clip;transition:background-color .5s ease,color .5s ease}
@@ -298,3 +298,129 @@ button.btn{appearance:none;cursor:pointer}
 @keyframes hud-blink{50%{opacity:.2}}
 @keyframes hud-ding{0%{box-shadow:0 0 0 0 rgba(255,196,107,.95)}100%{box-shadow:0 0 0 26px rgba(255,196,107,0)}}
 .hero h1:focus{outline:none}
+
+/* The 3D background (80-scene.js) and the glass that floats over it.
+   Every panel on the page is a pane of frosted glass: it blurs and tints what is behind it, has a lit edge, and catches a soft light that follows the pointer (81-glass.js).
+   The light and dark colours of the glass are the --g-* values: light ones here, dark ones in the dark theme block above. */
+:root{
+  --g-fill:rgba(255,255,255,.42);--g-fill-2:rgba(255,255,255,.68);--g-fill-3:rgba(255,255,255,.56);--g-fill-hi:rgba(255,255,255,.62);--g-chip:rgba(255,255,255,.55);
+  --g-rim:rgba(255,255,255,.95);--g-rim-2:rgba(255,255,255,.55);--g-line:rgba(15,27,38,.1);--g-shine:rgba(255,255,255,.7);--g-sink:rgba(15,27,38,.13);
+  --g-sheen:rgba(255,255,255,.6);--g-shadow:rgba(28,44,58,.3);--g-ts1:rgba(255,255,255,.55);--g-ts2:rgba(255,255,255,.7);--g-blur:22px;--g-sat:1.7;
+  --g-soft:color-mix(in srgb,var(--ink) 90%,var(--wall));   /* the quieter text colour: a little stronger than --ink-soft, so it still reads over a bright spot */
+}
+
+/* ---------------------------------------------------------------- the stage */
+html{background:var(--wall)}
+body{background:transparent}
+.gl{position:fixed;inset:0;width:100%;height:100%;z-index:-1;display:block;pointer-events:none;opacity:0;transition:opacity 1.6s ease}
+html.gl-on .gl{opacity:1}
+html.gl-off .gl{display:none}
+.hero,.doors,.work,.story,.contact{background:transparent}
+.floor{display:none}
+.sun{display:none}
+/* a soft shade over the left of the picture, so words on the bare background stay easy to read while the light stays on the right */
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(90deg,rgba(4,6,12,.66) 0%,rgba(4,6,12,.34) 42%,rgba(4,6,12,0) 70%)}
+:root[data-theme="light"] body::after{background:linear-gradient(90deg,rgba(226,232,226,.62) 0%,rgba(226,232,226,.3) 42%,rgba(226,232,226,0) 70%)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) body::after{background:linear-gradient(90deg,rgba(226,232,226,.62) 0%,rgba(226,232,226,.3) 42%,rgba(226,232,226,0) 70%)}}
+@media (max-width:899px){body::after{background:rgba(4,6,12,.54)}:root[data-theme="light"] body::after{background:rgba(226,232,226,.4)}}
+@media (max-width:899px) and (prefers-color-scheme:light){:root:not([data-theme="dark"]) body::after{background:rgba(226,232,226,.4)}}
+/* no WebGL (or the picture was lost): the same page over a still, calm glow instead of the hall */
+html.gl-off body::after{background:radial-gradient(900px 640px at 78% 6%,rgba(255,196,107,.2),transparent 70%),radial-gradient(760px 700px at 2% 96%,rgba(86,117,255,.16),transparent 72%)}
+:root[data-theme="light"].gl-off body::after{background:radial-gradient(900px 640px at 78% 6%,rgba(255,196,107,.36),transparent 70%),radial-gradient(760px 700px at 2% 96%,rgba(47,85,224,.12),transparent 72%)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]).gl-off body::after{background:radial-gradient(900px 640px at 78% 6%,rgba(255,196,107,.36),transparent 70%),radial-gradient(760px 700px at 2% 96%,rgba(47,85,224,.12),transparent 72%)}}
+/* the safe strip behind a phone's notch: frosted, not a solid bar */
+body::before{background:color-mix(in srgb,var(--wall) 55%,transparent);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+
+/* ---------------------------------------------------------------- words on the bare background */
+.hero h1,.hero .intro,.band>.wrap>h2,.band>.wrap>.lede{text-shadow:0 1px 1px var(--g-ts1),0 0 12px var(--g-ts2),0 0 28px var(--g-ts2),0 0 56px var(--g-ts2)}
+.hero .intro,.band>.wrap>.lede,.lights li p{color:var(--g-soft)}
+
+/* ---------------------------------------------------------------- one pane of glass */
+.nav-in,.btn-ghost,.sign,.behind,.card,.lights li,.front{
+  --g-box:inset 0 1px 0 var(--g-rim-2),inset 0 0 0 1px var(--g-line),inset 0 16px 24px -18px var(--g-shine),inset 0 -16px 24px -20px var(--g-sink),0 26px 54px -28px var(--g-shadow);
+  isolation:isolate;
+  background-color:var(--g-fill);
+  -webkit-backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+  backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+  box-shadow:var(--g-box);
+}
+.nav-in,.btn-ghost,.sign,.behind,.front{position:relative}
+/* the lit edge: a thin ring that is bright where the light hits (top left, bottom right) and nearly gone elsewhere */
+.nav-in::after,.btn-ghost::after,.sign::after,.behind::after,.card::after,.lights li::after,.front::after{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:linear-gradient(140deg,var(--g-rim) 0%,var(--g-rim-2) 22%,transparent 46%,transparent 64%,var(--g-rim-2) 86%,var(--g-rim) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask-composite:exclude;
+}
+/* the light that follows the pointer (81-glass.js sets --mx and --my) */
+.nav-in::before,.btn-ghost::before,.behind::before,.card::before,.front::before{
+  content:"";position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .5s ease;
+  background:radial-gradient(340px circle at var(--mx,50%) var(--my,0%),var(--g-sheen),transparent 62%);
+}
+@media (hover:hover){.nav-in:hover::before,.btn-ghost:hover::before,.behind:hover::before,.card:hover::before,.front:hover::before{opacity:1}}
+
+/* ---------------------------------------------------------------- the nav: a pill of glass that floats at the top */
+.nav{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border:0;pointer-events:none}
+.nav-in{pointer-events:auto;width:min(1120px,calc(100% - 20px));height:56px;margin:10px auto 0;padding:0 10px 0 14px;border-radius:999px;background-color:var(--g-fill-3);transition:background-color .5s ease,box-shadow .5s ease}
+.bulb-btn:hover{background:var(--g-fill-hi)}
+
+/* ---------------------------------------------------------------- buttons and the sign */
+.btn-ghost{border-width:0;padding:calc(.78em + 2px) calc(1.35em + 2px);color:var(--ink);transition:transform .2s ease,background-color .3s ease,box-shadow .5s ease}
+.btn-ghost:hover{background-color:var(--g-fill-hi)}
+.sign{border:0;border-radius:999px;padding:calc(.45em + 2px) calc(.95em + 2px) calc(.45em + 2px) calc(.8em + 2px);color:var(--ink)}
+.btn-solid{box-shadow:0 10px 30px -12px color-mix(in srgb,var(--cta) 70%,transparent)}
+
+/* ---------------------------------------------------------------- what is behind the open door: the glass takes the door's paint */
+.behind{border-top:0;border-radius:22px;background-color:var(--g-fill-2);background-image:linear-gradient(180deg,color-mix(in srgb,var(--paint) 30%,transparent),transparent 52%);
+  box-shadow:inset 0 3px 0 var(--paint),var(--g-box);transition:background-color .5s ease,box-shadow .5s ease}
+.chips li{background:var(--g-chip);border-color:var(--g-line);box-shadow:inset 0 1px 0 var(--g-rim-2)}
+
+/* ---------------------------------------------------------------- the work: thick glass, so the cards that stack up stay easy to read */
+.card{background-color:var(--g-fill-2);border-radius:24px;box-shadow:inset 0 1px 0 var(--g-rim-2),inset 0 0 0 1px var(--g-line),inset 0 16px 24px -18px var(--g-shine),inset 0 -16px 24px -20px var(--g-sink),0 -14px 34px -18px var(--g-shadow)}
+
+/* ---------------------------------------------------------------- the story: every light sits in its own small pane, and the pane glows when the light comes on */
+.lights li{--ly:clamp(16px,2.4vw,24px);padding:var(--ly) clamp(18px,2.6vw,28px);border-radius:22px;background-color:var(--g-fill-3);transition:background-color .5s ease,box-shadow .6s ease}
+.lights li::before{top:calc(var(--ly) + .3em)}
+.lights li.on{--g-rim:rgba(255,205,120,.75);--g-rim-2:rgba(255,205,120,.24);--g-shadow:rgba(255,160,60,.28)}
+
+/* ---------------------------------------------------------------- the contact: a warm pane, the front door with its light on */
+.front{border-radius:30px;color:var(--ink);background-color:var(--g-fill-2);background-image:linear-gradient(135deg,color-mix(in srgb,var(--lamp) 36%,transparent),color-mix(in srgb,var(--lamp) 4%,transparent) 64%);transition:background-color .5s ease,color .5s ease}
+.front .wa{background:var(--ink);color:var(--wall)}
+.front .wa .wa-p{fill:var(--ink)}
+
+/* ---------------------------------------------------------------- inside a room the page behind is covered, so the cards there stay solid */
+.room .card{background:var(--paper);-webkit-backdrop-filter:none;backdrop-filter:none;border-radius:20px;box-shadow:0 -14px 34px -16px var(--shadow),inset 0 1px 0 var(--rule)}
+.room .card::before,.room .card::after{display:none}
+
+/* ---------------------------------------------------------------- walking through a door: the copy of the doors zooms alone over the hall while the rest of the page lets go */
+html.staged #doors{visibility:hidden}
+.stage .band>.wrap>h2,.stage .band>.wrap>.lede{text-shadow:0 1px 1px var(--g-ts1)}   /* the copy grows to many times its size: a big soft shadow would have to be painted again and again as it grows */
+#site .nav,#site main>section:not(#doors),#site .foot{transition:opacity .45s ease}
+html.fading #site .nav,html.fading #site main>section:not(#doors),html.fading #site .foot{opacity:0}
+
+/* ---------------------------------------------------------------- when the device is slow, the glass blurs less (80-scene.js sets data-q) */
+html[data-q="0"]:root{--g-blur:9px;--g-sat:1.15}
+/* the big panes stop blurring when there is no picture to blur (no WebGL) or the device is too slow to blur it: they become denser tinted glass, and the stacked work cards go solid */
+html.gl-off .behind,html.gl-off .card,html.gl-off .lights li,html.gl-off .front,html[data-q="0"] .behind,html[data-q="0"] .card,html[data-q="0"] .lights li,html[data-q="0"] .front{-webkit-backdrop-filter:none;backdrop-filter:none}
+html.gl-off .card,html[data-q="0"] .card{background-color:var(--paper)}
+html[data-q="0"] .behind,html[data-q="0"] .front{background-color:var(--g-fill-2)}
+html[data-q="0"] .lights li{background-color:var(--g-fill-2)}
+html[data-q="0"] .nav-in::before,html[data-q="0"] .btn-ghost::before,html[data-q="0"] .behind::before,html[data-q="0"] .card::before,html[data-q="0"] .front::before{display:none}
+
+/* ---------------------------------------------------------------- fallbacks */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .nav-in,.behind,.card,.lights li,.front{background-color:var(--paper)}
+  .btn-ghost,.sign{background-color:var(--wall-2)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .nav-in,.behind,.card,.lights li,.front{background-color:var(--paper);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .btn-ghost,.sign{background-color:var(--wall-2);-webkit-backdrop-filter:none;backdrop-filter:none}
+  body::before{-webkit-backdrop-filter:none;backdrop-filter:none;background:var(--wall)}
+}
+@media (prefers-reduced-motion:reduce){
+  .nav-in::before,.btn-ghost::before,.behind::before,.card::before,.front::before{display:none}
+}
+@media (forced-colors:active){
+  .nav-in,.btn-ghost,.sign,.behind,.card,.lights li,.front{border:1px solid CanvasText}
+  .nav-in::after,.btn-ghost::after,.sign::after,.behind::after,.card::after,.lights li::after,.front::after{display:none}
+}

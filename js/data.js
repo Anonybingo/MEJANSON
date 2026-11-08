@@ -7,6 +7,8 @@ const PROFILE = {
   whatsapp: "+250 790 778 146",
   whatsappText: "Hi JANSON, I saw your portfolio and I have something to build.",
   github: "https://github.com/Anonybingo",
+  // The moving 3D background: a long hall of lit doorways that you walk down as you scroll. Set this to false for a calm, still background instead.
+  background3d: true,
   // Your portrait. The page turns it into dust that gathers into your face. Save your photo as assets/photo.jpg
   // (or point this at another file in assets/). A head-and-shoulders photo against a plain light backdrop works best.
   // A PNG with a see-through background works too.

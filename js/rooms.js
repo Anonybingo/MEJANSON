@@ -5,6 +5,8 @@
   const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
   const canAnimate = typeof room.animate === 'function';
   let state = 'idle', cur = -1, pushed = false, wantOut = false;
+  const html = document.documentElement;
+  const unstage = S => { if (S) S.stage.remove(); html.classList.remove('staged'); };   // the real doors come back the moment the copy is gone
 
   const hashFor = i => '#/door/' + PROFILE.doors[i].slug;
   const doorFromHash = () => {
@@ -42,6 +44,7 @@
     const stage = document.createElement('div');
     stage.className = 'stage'; stage.setAttribute('aria-hidden', 'true');
     stage.appendChild(clone); document.body.appendChild(stage);
+    html.classList.add('staged');                                   // the real doors hide: the copy stands exactly where they are
     const vw = document.documentElement.clientWidth, vh = window.innerHeight;
     const scale = Math.max(vw / jb.width, vh / jb.height) * 1.3;
     return { stage, clone, doors: cd, end: 'translate(' + (vw / 2 - px) + 'px,' + (vh / 2 - py) + 'px) scale(' + scale + ')' };
@@ -96,6 +99,7 @@
         void S.stage.offsetWidth;                                   // the copy is drawn once as it is, so the door below can swing open
         S.doors.forEach((b, k) => b.classList.toggle('open', k === i));
         S.stage.classList.add('go');
+        html.classList.add('fading');                               // the rest of the page lets go while you walk up to the door
         const zoom = S.clone.animate([{ transform: 'none' }, { transform: S.end }], { duration: 980, delay: 150, easing: 'cubic-bezier(.62,0,.9,.5)', fill: 'both' });
         const fade = room.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 440, delay: 780, easing: 'ease-out', fill: 'both' });
         await Promise.all([zoom.finished, fade.finished]).catch(() => {});
@@ -108,7 +112,7 @@
     } catch (err) {
       room.hidden = false;
     }
-    if (S) S.stage.remove();
+    unstage(S);
     state = 'inside';
     title.focus({ preventScroll: true });
     if (wantOut) { wantOut = false; goBack(); } else sync();
@@ -117,6 +121,7 @@
   async function leave() {
     if (state !== 'inside') return;
     state = 'leaving';
+    html.classList.remove('fading');                                // the page comes back as the room fades
     const i = cur, btn = doors[i];
     const mode = !canAnimate ? 'none' : reduce() ? 'fade' : 'zoom';
     let S = null;
@@ -135,7 +140,7 @@
       }
     } catch (err) {}
     room.hidden = true;
-    if (S) S.stage.remove();
+    unstage(S);
     room.classList.remove('arrive');
     site.inert = false;
     btn.focus({ preventScroll: true });
