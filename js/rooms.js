@@ -33,6 +33,7 @@
     clone.removeAttribute('id'); clone.removeAttribute('aria-labelledby');
     clone.querySelectorAll('[id]').forEach(n => n.removeAttribute('id'));
     clone.inert = true; clone.setAttribute('aria-hidden', 'true');
+    clone.classList.remove('rv', 'in-head', 'in-doors');          // the copy never replays the scroll reveal
     const cd = [...clone.querySelectorAll('.door')];
     cd.forEach((b, k) => b.classList.toggle('open', k === startOpen));
     Object.assign(clone.style, { position: 'absolute', left: sr.left + 'px', top: sr.top + 'px', width: sr.width + 'px', height: sr.height + 'px', margin: '0' });
@@ -74,13 +75,14 @@
 
   async function enter(i, btn, o = {}) {
     if (state !== 'idle' || !PROFILE.doors[i]) return;
-    state = 'entering'; cur = i; wantOut = false; touched = true;
+    state = 'entering'; cur = i; wantOut = false; touch();
+    if (window.settleDoors) settleDoors();                          // the doors are copied below, so they must be in their normal state first
     holdScroll(true);
     let mode = o.mode || 'zoom';
     if (!canAnimate) mode = 'none';
     else if (reduce() && mode === 'zoom') mode = 'fade';
     const before = doors.findIndex(b => b.classList.contains('open'));
-    openDoor(i);
+    holdDoor('room', i);                                            // the door stays open for as long as you are inside
     fill(i);
     let S = null;
     try {
@@ -139,6 +141,7 @@
     btn.focus({ preventScroll: true });
     holdScroll(false);
     state = 'idle'; cur = -1;
+    setTimeout(() => { if (state === 'idle') holdDoor('room', -1); }, 320);   // the door swings shut behind you, unless the mouse or keyboard is on it
     sync();
   }
 
@@ -158,7 +161,7 @@
     if (state === 'idle') { if (i >= 0) enter(i, doors[i], { mode: 'fade', fromHistory: true }); }
     else if (state === 'inside') {
       if (i < 0) leave();
-      else if (i !== cur) { cur = i; openDoor(i); fill(i); }
+      else if (i !== cur) { cur = i; holdDoor('room', i); fill(i); }
     }
     else if (state === 'entering' && i < 0) wantOut = true;
   }

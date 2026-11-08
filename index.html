@@ -6,13 +6,15 @@
 <title>JANSON | Portfolio</title>
 <meta name="description" content="A portfolio where every door opens onto something I build.">
 <meta name="color-scheme" content="light dark">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M6 30V13a10 10 0 0 1 20 0v17z' fill='%23E7C170'/%3E%3Cpath d='M10 30V14a6 6 0 0 1 12 0v16z' fill='%230F1B26'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20viewBox=%220%200%2064%2064%22%3E%3Cdefs%3E%3ClinearGradient%20id=%22g%22%20x1=%220%22%20y1=%220%22%20x2=%22.35%22%20y2=%221%22%3E%3Cstop%20offset=%220%22%20stop-color=%22%23F7DD98%22/%3E%3Cstop%20offset=%22.55%22%20stop-color=%22%23DFAB4F%22/%3E%3Cstop%20offset=%221%22%20stop-color=%22%23B57D26%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width=%2264%22%20height=%2264%22%20rx=%2215%22%20fill=%22url(%23g)%22/%3E%3Crect%20x=%22.75%22%20y=%22.75%22%20width=%2262.5%22%20height=%2262.5%22%20rx=%2214.3%22%20fill=%22none%22%20stroke=%22%235C3A0A%22%20stroke-opacity=%22.4%22%20stroke-width=%221.5%22/%3E%3Cpath%20d=%22M37.5%2011v27.5a10.5%2010.5%200%200%201-10.5%2010.5h-4.5%22%20fill=%22none%22%20stroke=%22%2324170A%22%20stroke-width=%2213%22/%3E%3C/svg%3E">
+<link rel="alternate icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <noscript><p style="padding:24px;font:16px/1.5 system-ui,sans-serif">This portfolio needs JavaScript to show its doors. Please turn it on and reload.</p></noscript>
 <div id="site">
-<header class="nav" id="top">
+<header class="nav">
   <div class="wrap nav-in">
     <a class="brand" href="#top" aria-label="Back to the top"><span class="plate" data-bind="initials">YN</span></a>
     <nav aria-label="Sections"><a href="#doors">Doors</a><a href="#work">Work</a><a href="#story">Story</a><a href="#contact">Contact</a></nav>
@@ -75,9 +77,12 @@
     <div class="front">
       <div>
         <h2 id="contact-h">Got something to build?</h2>
-        <p>Press the bell to copy my email, or find me on GitHub.</p>
-        <p class="email" id="email" data-bind="email">yourname@example.com</p>
-        <p><a id="ghLink" href="https://github.com/Anonybingo" target="_blank" rel="noopener">github.com/Anonybingo</a></p>
+        <p>Press the bell to copy my email, or message me on WhatsApp.</p>
+        <p class="email" id="email" data-bind="email">ndayizeyejanson15@gmail.com</p>
+        <p class="reach">
+          <a class="wa" id="waLink" href="https://wa.me/250790778146" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="wa-b" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5.05-1.32A10 10 0 1 0 12 2z"/><path class="wa-p" transform="translate(4.8 4.8) scale(.6)" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1z"/></svg><span>WhatsApp <b id="waNum">+250 790 778 146</b></span></a>
+          <a id="ghLink" href="https://github.com/Anonybingo" target="_blank" rel="noopener">github.com/Anonybingo</a>
+        </p>
       </div>
       <div class="ringer">
         <button class="bell" id="bell" type="button" aria-label="Ring the bell to copy my email address"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a1.5 1.5 0 0 0-1.5 1.5v.6A6.5 6.5 0 0 0 5.5 10.5v3.2L4 16.5V18h16v-1.5l-1.5-2.8v-3.2a6.5 6.5 0 0 0-5-6.4v-.6A1.5 1.5 0 0 0 12 2zM9.8 19.5a2.2 2.2 0 0 0 4.4 0z"/></svg></button>
@@ -87,7 +92,19 @@
   </div>
 </section>
 </main>
-<footer class="foot"><div class="wrap"><span>Built by hand with HTML, CSS and JavaScript.</span><a href="#top">Back to the top</a></div></footer>
+<footer class="foot">
+  <div class="wrap foot-in">
+    <button class="lift" id="lift" type="button">
+      <span class="lcd" aria-hidden="true"><b id="liftNo">5</b></span>
+      <span class="callbtn" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 20.5 15h-17z"/></svg></span>
+      <span class="lift-text">Back to the top</span>
+    </button>
+  </div>
+  <div class="hud" id="hud" aria-hidden="true">
+    <span class="lcd"><b id="hudNo">5</b></span>
+    <span class="hud-info"><b id="hudName">Contact</b><small><svg class="hud-arrow" viewBox="0 0 12 12"><path d="M6 1.5 11 10H1z"/></svg><span id="hudNote">Going up</span></small></span>
+  </div>
+</footer>
 </div>
 <div class="room" id="room" role="dialog" aria-modal="true" aria-labelledby="roomTitle" hidden>
   <div class="room-scroll" id="roomScroll">
@@ -116,7 +133,9 @@
 <script src="js/lamp.js"></script>
 <script src="js/flap.js"></script>
 <script src="js/misc.js"></script>
+<script src="js/reveal.js"></script>
 <script src="js/rooms.js"></script>
 <script src="js/dust.js"></script>
+<script src="js/lift.js"></script>
 </body>
 </html>

@@ -1,7 +1,11 @@
 /* Edit this object to make the page yours. Everything on the page is filled in from here. */
 const PROFILE = {
   name: "JANSON",
-  email: "yourname@example.com",
+  email: "ndayizeyejanson15@gmail.com",
+  // The WhatsApp button on the contact card. The link opens a chat with this number (write it as you like, with spaces).
+  // whatsappText is what the chat starts with. Leave it empty ("") to start a blank chat, or remove the whatsapp line to hide the button.
+  whatsapp: "+250 790 778 146",
+  whatsappText: "Hi JANSON, I saw your portfolio and I have something to build.",
   github: "https://github.com/Anonybingo",
   // Your portrait. The page turns it into dust that gathers into your face. Save your photo as assets/photo.jpg
   // (or point this at another file in assets/). A head-and-shoulders photo against a plain light backdrop works best.

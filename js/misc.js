@@ -1,19 +1,5 @@
-/* The doors swing open one after another when the corridor scrolls into view (until you touch one), the lights come on with the scroll, the bell copies the email */
+/* The lights come on with the scroll, the bell copies the email. (What the doors do when they scroll into view is in 76-reveal.js.) */
 (() => {
-  const seq = matchMedia('(prefers-reduced-motion: reduce)').matches ? [0] : [0, 1, 2, 3, 0];
-  let n = 0;
-  const step = () => {
-    if (touched) return;
-    if (document.hidden) { setTimeout(step, 1000); return; }
-    openDoor(seq[n++]);
-    if (n < seq.length) setTimeout(step, 2200);
-  };
-  new IntersectionObserver((es, o) => {
-    if (!es[0].isIntersecting) return;
-    o.disconnect();
-    setTimeout(step, 450);
-  }, { threshold: 0.4 }).observe(corridor);
-
   const list = $('lights'), items = [...list.children];
   let queued = false;
   function update() {
