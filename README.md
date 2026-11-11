@@ -4,7 +4,7 @@ A portfolio where every door opens onto something you build. Point at a door and
 
 Your portrait has no frame: it is made of dust that sits straight on the page. The dust flies in and gathers into your face, the mouse pushes it about, and it blows apart when you scroll down and gathers again when you scroll back up. On a dark page the dust glows gold. On a light page it turns into dark ink, like a pen stipple. Pull the lamp and the dust gathers again in the other look.
 
-Behind everything is a long hall of lit doorways, drawn live in 3D. As you scroll you walk down the hall, past the colours of your four doors, to a bright door at the end that lights up the contact card. The mouse leans the view a little, and the footer lift flies you back up the hall. Every panel on the page (the top bar, the panel behind an open door, the project cards, the story and the contact card) is frosted glass: it blurs and tints the hall behind it, has a lit edge, and catches a soft light that follows the pointer. Pull the lamp and the whole hall turns between night and day.
+Behind everything is a frozen landscape, drawn live in 3D: a snowfield of square columns of stone and ice that runs out to the mist under a cold moon, with snow falling past you. As you scroll you fly forward over it. Blocks of stone and ice float above the field, and a few of them glow from the inside. Move the mouse over one (anywhere that is not text or a button) and it springs away, twists and flares, then settles back with a little bounce; click or tap one and a ripple runs through the blocks around it. The mouse also presses down the columns of the snowfield under it and sends slow rings across it. When you scroll, the blocks gather: under the doors they build a low wall, and around the story they stand as a frame. At the bottom of the page, and for a moment when you step through a door (and again, running backwards, when you step back out), a tunnel of blocks spirals open around you, dark at the far end. The mouse leans the view a little, and the footer lift flies you back up. Every panel on the page (the top bar, the panel behind an open door, the project cards, the story and the contact card) is frosted glass: it blurs and tints the world behind it, has a lit edge, and catches a soft light that follows the pointer. Pull the lamp and the whole world turns between night and day.
 
 It is plain HTML, CSS and JavaScript. No build step, nothing to install.
 
@@ -20,7 +20,7 @@ Everything on the page is filled in from one file: `js/data.js`.
    - `whatsapp` is your number with the country code. The page turns it into a `wa.me` link, so a tap opens a WhatsApp chat with you. `whatsappText` is the message that is already typed in when the chat opens. Delete the `whatsapp` line and the WhatsApp button disappears.
 2. Write your own `intro` and `roles`. The roles are the words that flip on the board.
 3. Edit the four `doors`. Each door opens into a room. The `see` list holds the ids of the projects that hang in that room.
-4. Edit `projects` and `story`.
+4. Edit `projects` and `story`. A project can also have a `role` (what you did on it, shown as "My role") and a `live` link to the running site (shown as "Live site"). Both are optional: nothing is shown until you add them.
 5. Do not want the moving 3D background? Set `background3d: false` and the page uses a calm, still glow behind the same glass panels.
 
 ## Your portrait
@@ -56,8 +56,13 @@ Push the folder to GitHub and turn on GitHub Pages (Settings, Pages, branch `mai
 | `js/misc.js` | The lights timeline and the email bell |
 | `js/reveal.js` | The "Pick a door" reveal when you scroll to it, then the short tour where each door opens once |
 | `js/lift.js` | The "Back to the top" lift: floors count down as the page rides up |
-| `js/three.min.js` | A trimmed copy of Three.js, the library that draws the 3D hall. You never need to edit it |
-| `js/scene.js` | The hall itself: doorways, floor, walls, floating sparkles and glow, and how the camera follows your scroll and your mouse |
+| `js/three.min.js` | A trimmed copy of Three.js, the library that draws the 3D background. You never need to edit it |
+| `js/world.js` | The shared base of the 3D background: the graphics context, the cold light and fog, the night and day looks, the camera that follows your scroll and your mouse, and the soft glow over the picture |
+| `js/sky.js` | The sky with its moon and stars, and the falling snow |
+| `js/terrain.js` | The snowfield of stone and ice columns: how it rises into ridges, how the pointer presses it down and sends rings across it |
+| `js/blocks.js` | The floating blocks: how they spring away from the pointer, and how they gather into a wall under the doors and a frame around the story |
+| `js/vortex.js` | The tunnel of blocks at the bottom of the page and when a door is opened or closed |
+| `js/run.js` | The loop that runs all of the above, watches the pointer, pauses when nothing can be seen and lowers the quality on slow devices |
 | `js/glass.js` | The soft light that follows the pointer across the glass panels |
 | `js/THREE-LICENSE.txt` | The Three.js licence (MIT) |
 | `assets/photo.jpg` | Your photo |
@@ -71,10 +76,11 @@ Push the folder to GitHub and turn on GitHub Pages (Settings, Pages, branch `mai
 - "Back to the top" in the footer is a lift. Press it and the page rides up with the floor numbers counting down, and the lamp swings when you arrive. Scroll, touch or press a scrolling key to take over at any time. With "reduce motion" turned on it simply jumps. The logo at the top left also goes to the top.
 - When the "Pick a door" section scrolls into view, the heading rises word by word and the doors come up one after another, once. With "reduce motion" turned on nothing animates.
 - The dust only runs while the portrait is on screen, and it thins itself out on slow devices.
-- The hall looks after itself. On a slow phone it lowers its own quality (fewer sparkles, less glow, lighter glass). It stops drawing while a room is open or the tab is hidden. With "reduce motion" turned on it is drawn once and stays still. If a browser has no WebGL, you get a soft gradient and the same glass panels. To try a level yourself, type `localStorage.hallQ = "0"` (lightest), `"1"` or `"2"` (full) in the browser console and reload.
+- The background looks after itself. On a slow device it lowers its own quality (fewer columns, blocks, snowflakes and tunnel rings, a smaller picture, lighter glass). It stops drawing while a room is open or the tab is hidden. With "reduce motion" turned on it is drawn once and stays still. If a browser has no WebGL (or loses its graphics context), you get a soft gradient and the same glass panels. To try a level yourself, type `localStorage.hallQ = "0"` (lightest), `"1"` or `"2"` (full) in the browser console and reload.
 - With "reduce transparency" turned on in the system settings, the glass panels become solid.
+- With "reduce motion" turned on the blocks do not react to the pointer either. While the page scrolls they let go of the pointer, so nothing is pushed around behind the text.
 - Your light or dark choice is remembered in the visitor's browser.
 
 ## Credits
 
-The 3D hall is drawn with [Three.js](https://threejs.org) (MIT licence, in `js/THREE-LICENSE.txt`). The hall, its colours and the glass are made for this portfolio. The dust idea comes from the hero of your Haki Boutique site (MOUSSA_MARKET). Fonts are under the SIL Open Font License 1.1: Bricolage Grotesque, Big Shoulders Display and Newsreader. The licenses are in `assets/fonts/LICENSES.txt`.
+The 3D background is drawn with [Three.js](https://threejs.org) (MIT licence, in `js/THREE-LICENSE.txt`). The landscape, its colours and the glass are made for this portfolio. The rounded block shape and the springy touch come from your earlier jasonPortfolio project, rewritten to fit this page. The dust idea comes from the hero of your Haki Boutique site (MOUSSA_MARKET). Fonts are under the SIL Open Font License 1.1: Bricolage Grotesque, Big Shoulders Display and Newsreader. The licenses are in `assets/fonts/LICENSES.txt`.

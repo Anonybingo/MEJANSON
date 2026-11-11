@@ -100,6 +100,7 @@
         S.doors.forEach((b, k) => b.classList.toggle('open', k === i));
         S.stage.classList.add('go');
         html.classList.add('fading');                               // the rest of the page lets go while you walk up to the door
+        if (window.hallFx) hallFx.dive(950);                        // behind the door the tunnel of the background opens and rushes past (js/world-*.js; nothing happens without WebGL)
         const zoom = S.clone.animate([{ transform: 'none' }, { transform: S.end }], { duration: 980, delay: 150, easing: 'cubic-bezier(.62,0,.9,.5)', fill: 'both' });
         const fade = room.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 440, delay: 780, easing: 'ease-out', fill: 'both' });
         await Promise.all([zoom.finished, fade.finished]).catch(() => {});
@@ -129,6 +130,7 @@
       keepInView(btn);
       if (mode === 'zoom') {
         S = stageFor(i, i);
+        if (window.hallFx) hallFx.surface(950);                     // the same tunnel, running backwards, closes behind you
         const zoom = S.clone.animate([{ transform: S.end }, { transform: 'none' }], { duration: 920, delay: 140, easing: 'cubic-bezier(.1,.62,.28,1)', fill: 'both' });
         const fade = room.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 400, easing: 'ease-in', fill: 'both' });
         await Promise.all([zoom.finished, fade.finished]).catch(() => {});

@@ -7,7 +7,7 @@ const PROFILE = {
   whatsapp: "+250 790 778 146",
   whatsappText: "Hi JANSON, I saw your portfolio and I have something to build.",
   github: "https://github.com/Anonybingo",
-  // The moving 3D background: a long hall of lit doorways that you walk down as you scroll. Set this to false for a calm, still background instead.
+  // The moving 3D background: a frozen snowfield of stone and ice with floating blocks that you fly over as you scroll. Set this to false for a calm, still background instead.
   background3d: true,
   // Your portrait. The page turns it into dust that gathers into your face. Save your photo as assets/photo.jpg
   // (or point this at another file in assets/). A head-and-shoulders photo against a plain light backdrop works best.
@@ -34,6 +34,8 @@ const PROFILE = {
       points: ["Reuse the web code I already have", "Pick the tool by what the app needs", "Keep the same data behind web and phone"],
       tools: ["Capacitor", "React Native", "MongoDB"], see: ["mobile"] }
   ],
+  // Each project: id, cover, state, status, name, tag, text, stack, links.
+  // Optional extras (shown only when you fill them in): role: "What I did on it" (shown as "My role"), live: "https://..." (shown as a "Live site" link).
   projects: [
     { id: "health", cover: "pharmacy", state: "built", status: "Built", name: "HEALTH Center",
       tag: "An online pharmacy that runs without a server.",

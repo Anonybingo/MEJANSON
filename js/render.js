@@ -102,7 +102,12 @@ behind.addEventListener('click', e => {
 });
 idle();
 
-const cardHTML = (p, i, anchor) => `<article class="card"${anchor ? ` id="work-${esc(p.id)}"` : ''} style="--i:${i}"><figure class="art">${COVERS[p.cover] || ''}</figure><div class="info"><span class="status ${esc(p.state)}">${esc(p.status)}</span><h3>${esc(p.name)}</h3><p class="tag">${esc(p.tag)}</p><p>${esc(p.text)}</p><ul class="chips">${p.stack.map(s => `<li>${esc(s)}</li>`).join('')}</ul>${p.links.length ? `<p class="links">${p.links.map(l => `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</p>` : ''}</div></article>`;
+const cardHTML = (p, i, anchor) => {
+  // "live" and "role" are optional: they show only when they are filled in (see 70-data.js). Links are only made for web addresses.
+  const live = typeof p.live === 'string' && /^https?:\/\//i.test(p.live.trim()) ? [{ label: 'Live site', href: p.live.trim() }] : [];
+  const links = live.concat(p.links || []);
+  return `<article class="card"${anchor ? ` id="work-${esc(p.id)}"` : ''} style="--i:${i}"><figure class="art">${COVERS[p.cover] || ''}</figure><div class="info"><span class="status ${esc(p.state)}">${esc(p.status)}</span><h3>${esc(p.name)}</h3><p class="tag">${esc(p.tag)}</p><p>${esc(p.text)}</p>${p.role ? `<p class="role"><b>My role</b>${esc(p.role)}</p>` : ''}<ul class="chips">${p.stack.map(s => `<li>${esc(s)}</li>`).join('')}</ul>${links.length ? `<p class="links">${links.map(l => `<a href="${esc(l.href)}" target="_blank" rel="noopener">${esc(l.label)}</a>`).join('')}</p>` : ''}</div></article>`;
+};
 $('stack').innerHTML = PROFILE.projects.map((p, i) => cardHTML(p, i, true)).join('');
 
 $('lights').innerHTML = PROFILE.story.map(s => `<li><h3>${esc(s.title)}</h3><p>${esc(s.text)}</p></li>`).join('');

@@ -1,5 +1,6 @@
 /* The background. A long hall of lit doorways, drawn with Three.js (js/three.min.js is a trimmed copy of the library: nothing to install).
    Scrolling flies the camera down the hall, the mouse leans it a little, and the lamp's light/dark switch changes the whole hall.
+   Glowing cubes and slowly turning cuboids drift between the doorways in the door colours, and spin faster while you scroll.
    Everything else on the page floats over it as glass (see the glass rules in the stylesheet).
    No WebGL: the page keeps a calm gradient. "Reduce motion": one still frame. A slow computer: it draws fewer pixels by itself. */
 (() => {
@@ -217,6 +218,137 @@
   });
   const dust = new T.Points(dustGeo, dustMat); dust.frustumCulled = false; dust.renderOrder = 4; scene.add(dust);
 
+  /* ---- glowing cubes and turning cuboids, drifting between the doorways.
+     One merged geometry: every box carries its own centre, size, spin axis and colour, and the vertex shader does the tumbling,
+     so moving them costs nothing on the CPU. Boxes come in three passes, so a lighter quality simply draws fewer of them. */
+  let seed = 20261109;                                             // a fixed seed: the same boxes in the same places on every visit
+  const rnd = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let a = Math.imul(seed ^ seed >>> 15, 1 | seed); a = a + Math.imul(a ^ a >>> 7, 61 | a) ^ a; return ((a ^ a >>> 14) >>> 0) / 4294967296; };
+  const PER_GAP = [3, 3, 4];                                       // boxes per gap between doorways, in each of three passes
+  const KEY = { brass: 0, d1: 1, d2: 2, d3: 3, d4: 4, exit: 0 };
+  const CAM_Y = 1.65;
+  const boxes = [[], [], []];
+  for (let pass = 0; pass < 3; pass++) for (let g = 0; g < N; g++) {
+    const first = g === 0, m = first ? 2 : PER_GAP[pass];          // the first gap is the one on the first screen: a few boxes, kept above and right of the words
+    const z0 = gz(g) + 1.9, z1 = first ? -6.4 : gz(g - 1) - 1.9;   // (the first gap's boxes stay a good way off, so they never crowd the lamp)
+    for (let i = 0; i < m; i++) {
+      for (let tries = 0; tries < 30; tries++) {
+        const kr = rnd(), kind = first ? (kr < .7 ? 0 : 1) : kr < .5 ? 0 : kr < .82 ? 1 : 2;   // 0 cube, 1 long cuboid, 2 door-like slab that turns about its own height
+        let sc;
+        if (kind === 0) { const q = first ? .34 + rnd() * .4 : .26 + Math.pow(rnd(), 2.2) * .85; sc = [q, q, q]; }
+        else if (kind === 1) {
+          const b = (.26 + rnd() * .3) * (first ? .85 : 1), l = b * (2 + rnd() * 2.3), c = b * (.7 + rnd() * .8), long = Math.floor(rnd() * 3);
+          sc = [b, b, b]; sc[long] = l; sc[(long + 1) % 3] = c;
+        }
+        else sc = [.85 + rnd() * .6, 2.1 + rnd() * 1.1, .07 + rnd() * .06];
+        const r = .5 * Math.hypot(sc[0], sc[1], sc[2]);
+        const side = rnd() < .6 ? 1 : -1;                          // a little more on the right, away from the words
+        const x = first ? 1.5 + rnd() * 1.9 : side * (1.1 + rnd() * (W / 2 - .45 - r - 1.1));
+        const y = first ? 2.8 + rnd() * 2.1 : kind === 2 ? sc[1] / 2 + .45 + rnd() * 1.3 : .3 + r + Math.pow(rnd(), 1.3) * (H - .7 - 2 * r);
+        const z = z0 + (z1 - z0) * ((i + rnd()) / m);
+        if (Math.hypot(x, y - CAM_Y) < r + 1.3) continue;           // never on the camera's path
+        if (Math.abs(x) + r > W / 2 - .25 || y + r > H - .25 || y - r < .15) continue;
+        let ax = [rnd() - .5, rnd() - .5, rnd() - .5]; const al = Math.hypot(...ax) || 1; ax = ax.map(v => v / al);
+        if (kind === 2) ax = [0, 1, 0];
+        const sp = (kind === 2 ? .2 + rnd() * .36 : .14 + rnd() * .42) * (rnd() < .5 ? -1 : 1);   // radians a second: a full turn takes somewhere between 11 and 45 seconds
+        const near = KEY[SEQ[g]];
+        const ph = rnd() * 6.2832, gl = .75 + rnd() * .6, pc = rnd() < .6 ? near : Math.floor(rnd() * 5), sd = rnd();
+        boxes[pass].push({ c: [x, y, z], s: sc, a: [ax[0], ax[1], ax[2], sp], p: [ph, gl, pc + (sd < .3 ? 8 : 0), sd] });   // about one in three is "lit": a soft light inside (+8 on the colour number marks it)
+        break;
+      }
+    }
+  }
+  const all = boxes[0].concat(boxes[1], boxes[2]), NB = all.length;
+  const COUNT = [boxes[0].length, boxes[0].length + boxes[1].length, NB];   // what each quality draws
+  const aOArr = new Float32Array(NB * 4), aO = new T.InstancedBufferAttribute(aOArr, 4); aO.setUsage(T.DynamicDrawUsage);   // what the pointer has done to each box: how far it is pushed, and how much it is twisted
+  /* The shape is a cube with its edges rounded off. Each corner point is stored as a direction on a sphere plus which corner of the box it belongs to;
+     the vertex shader puts it at (corner x (half the size - the rounding)) + (direction x the rounding), so the rounding stays the same size however long the box is.
+     One copy of the shape is drawn once per box (instancing), and each box brings its own centre, size, spin axis and colour. */
+  const RN = 5, ROUND = .24;                                       // five steps across each face, so each rounded edge is four steps; the rounding is 24% of the thinnest side
+  const cubeGeo = new T.InstancedBufferGeometry();
+  {
+    const FACES = [[[1, 0, 0], [0, 0, -1], [0, 1, 0]], [[-1, 0, 0], [0, 0, 1], [0, 1, 0]], [[0, 1, 0], [1, 0, 0], [0, 0, -1]],
+                   [[0, -1, 0], [1, 0, 0], [0, 0, 1]], [[0, 0, 1], [1, 0, 0], [0, 1, 0]], [[0, 0, -1], [-1, 0, 0], [0, 1, 0]]];
+    const per = (RN + 1) * (RN + 1), pos = new Float32Array(per * 6 * 3), sgn = new Float32Array(per * 6 * 3), idx = new Uint16Array(RN * RN * 6 * 6);
+    let v = 0, o = 0;
+    FACES.forEach(([n, u, w]) => {
+      const base = v;
+      for (let j = 0; j <= RN; j++) for (let i = 0; i <= RN; i++, v++) {
+        const cu = -1 + 2 * i / RN, cw = -1 + 2 * j / RN, p = [0, 0, 0];
+        for (let k = 0; k < 3; k++) p[k] = n[k] * .5 + u[k] * cu * .5 + w[k] * cw * .5;      // a point on the unit cube
+        const q = p.map(c => c - Math.sign(c) * .5 / RN), len = Math.hypot(q[0], q[1], q[2]);   // half a step towards the middle, then made into a direction
+        for (let k = 0; k < 3; k++) { pos[v * 3 + k] = q[k] / len; sgn[v * 3 + k] = Math.sign(p[k]); }
+      }
+      for (let j = 0; j < RN; j++) for (let i = 0; i < RN; i++) {
+        const a = base + j * (RN + 1) + i, b = a + 1, c = b + RN + 1, d = a + RN + 1;
+        idx.set([a, b, c, a, c, d], o); o += 6;
+      }
+    });
+    cubeGeo.setAttribute('position', new T.BufferAttribute(pos, 3)); cubeGeo.setAttribute('aSg', new T.BufferAttribute(sgn, 3));
+    cubeGeo.setIndex(new T.BufferAttribute(idx, 1));
+    const perBox = (name, size, get) => { const a = new Float32Array(NB * size); all.forEach((b, i) => a.set(get(b), i * size)); cubeGeo.setAttribute(name, new T.InstancedBufferAttribute(a, size)); };
+    perBox('aC', 3, b => b.c); perBox('aS', 3, b => b.s); perBox('aA', 4, b => b.a); perBox('aP', 4, b => b.p);
+    cubeGeo.setAttribute('aO', aO);
+    cubeGeo.instanceCount = COUNT[Q];
+  }
+  const uPal = []; for (let i = 0; i < 5; i++) uPal.push(new T.Color());
+  const uSpin = { value: 0 };
+  const cubeVert = `
+    const float ROUND = ${ROUND.toFixed(3)};
+    attribute vec3 aSg; attribute vec3 aC; attribute vec3 aS; attribute vec4 aA; attribute vec4 aP; attribute vec4 aO;
+    uniform float uTime, uSpin; uniform vec3 uPal[5];
+    varying vec3 vW; varying vec3 vN; varying vec3 vLn; varying vec3 vTint; varying vec4 vP;
+    mat3 turn(vec3 k, float a){                                    // rotate about the axis k by the angle a
+      float c = cos(a), s = sin(a), t = 1. - c;
+      return mat3(c + k.x*k.x*t,       k.x*k.y*t + k.z*s, k.x*k.z*t - k.y*s,
+                  k.x*k.y*t - k.z*s,   c + k.y*k.y*t,     k.y*k.z*t + k.x*s,
+                  k.x*k.z*t + k.y*s,   k.y*k.z*t - k.x*s, c + k.z*k.z*t);
+    }
+    void main(){
+      float lit = step(7.5, aP.z), pal = aP.z - 8. * lit;          // the colour number carries the "lit" mark
+      float kick = length(aO.xyz);                                 // how far the pointer has pushed this box
+      mat3 R = turn(normalize(aA.xyz), aP.x + uSpin * aA.w + aO.w);
+      vec3 hs = aS * .5; float rr = min(aS.x, min(aS.y, aS.z)) * ROUND;
+      vec3 lp = aSg * (hs - rr) + position * rr;                   // the rounded box
+      vec3 c = aC + aO.xyz + vec3(sin(uTime * .23 + aP.w * 9.1) * .12, sin(uTime * .31 + aP.w * 6.28) * .18, 0.);   // a slow drift, so even a still box floats
+      vec4 w = modelMatrix * vec4(R * lp + c, 1.);
+      vW = w.xyz; vN = mat3(modelMatrix) * (R * position); vLn = position;
+      vTint = uPal[int(pal + .5)]; vP = vec4(aP.y, aP.w, lit, min(kick * 2.6, 1.4));
+      gl_Position = projectionMatrix * viewMatrix * w;
+    }`;
+  const cubeFrag = `
+    varying vec3 vW; varying vec3 vN; varying vec3 vLn; varying vec3 vTint; varying vec4 vP;
+    uniform float uTime, uLight, uRef; uniform vec3 uFog;
+    ${POOLS}
+    void main(){
+      vec3 n = normalize(vN), V = normalize(cameraPosition - vW);
+      vec3 a = abs(normalize(vLn));
+      float bev = 1. - max(a.x, max(a.y, a.z));                    // 0 across a flat face, rising round the rounded edges and corners
+      float rim = smoothstep(.02, .24, bev), ridge = smoothstep(.1, .3, bev);
+      float fr = pow(1. - abs(dot(n, V)), 2.4);
+      float grad = .5 + .5 * dot(n, normalize(vec3(.35, .85, .4)));
+      float pulse = .88 + .12 * sin(uTime * (.7 + vP.y * 1.3) + vP.y * 40.);
+      vec3 pl = pools(vW);
+      float dist = distance(vW, cameraPosition);
+      float fog = 1. - exp(-dist * mix(.032, .012, uLight));
+      float keep = exp(-dist * mix(.014, .008, uLight));          // the glowing edges keep their light far into the fog
+      float lit = vP.z, fl = vP.w;                                 // fl: a box that has just been touched flares
+      float ed = (ridge * 1.7 + rim * .7) * vP.x * pulse + fl * (ridge * 1.3 + rim * .7);
+      vec3 bD = vec3(.012, .015, .03) + vec3(.02, .025, .05) * grad + vTint * (.04 + .12 * fr) * vP.x + pl * (.25 + .35 * grad);
+      vec3 lD = mix(vTint, vec3(1.), .28) * (.16 + .20 * grad + .22 * fr) * (.8 + .2 * pulse);   // a lit box glows softly from inside
+      vec3 cD = mix(mix(bD, lD, lit), uFog, fog * .9) + vTint * (ed * keep + fl * .12);
+      vec3 bL = mix(vec3(.97, .975, .96), vTint, .12 + .16 * fr) * (.78 + .22 * grad);
+      vec3 lL = mix(vec3(1.), vTint, .42 + .18 * fr) * (.72 + .28 * grad);
+      vec3 cL = mix(mix(mix(bL, lL, lit), uFog, fog * .8), vTint * .85, clamp(ed * keep * .55, 0., 1.));
+      vec3 col = mix(cD, cL, uLight);
+      if (uRef > .5) col *= .9 * exp(vW.y * .2);                   // the reflection in the floor: fainter the deeper it goes
+      gl_FragColor = vec4(col, 1.);
+    }`;
+  const cubeMat = () => new T.ShaderMaterial({ uniforms: Object.assign({ uPal: { value: uPal }, uSpin, uRef: { value: 0 } }, U, shared), vertexShader: cubeVert, fragmentShader: cubeFrag });
+  const cubeFront = new T.Mesh(cubeGeo, cubeMat()), cubeMirror = new T.Mesh(cubeGeo, cubeMat());
+  cubeMirror.material.uniforms.uRef = { value: 1 }; cubeMirror.scale.y = -1;
+  cubeFront.frustumCulled = cubeMirror.frustumCulled = false;
+  scene.add(cubeFront, cubeMirror);
+
   /* ---------------------------------------------------------------- post: glow, vignette, grain */
   const post = new T.Scene(), postCam = new T.OrthographicCamera(-1, 1, 1, -1, 0, 1);
   const quad = new T.Mesh(new T.PlaneGeometry(2, 2)); quad.frustumCulled = false; post.add(quad);
@@ -262,7 +394,9 @@
     renderer.setPixelRatio(dpr); renderer.setSize(vw, vh, false);
     const w = Math.max(2, Math.floor(vw * dpr)), h = Math.max(2, Math.floor(vh * dpr));
     [rtScene, rtA1, rtB1, rtA2, rtB2].forEach(r => r && r.dispose());
-    rtScene = new T.WebGLRenderTarget(w, h, Object.assign({}, rtOpts, { depthBuffer: true }));
+    const aa = Q === 0 || w * h > 3.2e6 ? 0 : Q >= 2 ? 4 : 2;     // smoother edges on the boxes, but not on very large or slow pictures
+    rtScene = new T.WebGLRenderTarget(w, h, Object.assign({}, rtOpts, { depthBuffer: true, samples: aa }));
+    cubeGeo.instanceCount = COUNT[Q];
     const q1 = [Math.max(2, w >> 2), Math.max(2, h >> 2)], q2 = [Math.max(2, w >> 3), Math.max(2, h >> 3)];
     rtA1 = new T.WebGLRenderTarget(q1[0], q1[1], rtOpts); rtB1 = new T.WebGLRenderTarget(q1[0], q1[1], rtOpts);
     rtA2 = new T.WebGLRenderTarget(q2[0], q2[1], rtOpts); rtB2 = new T.WebGLRenderTarget(q2[0], q2[1], rtOpts);
@@ -290,6 +424,7 @@
     gates.forEach(g => { const c = hex(pal[g.key]); g.front.material.uniforms.uColor.value.copy(c); g.mirror.material.uniforms.uColor.value.copy(c); g.front.material.blending = g.mirror.material.blending = blend; });
     dustMat.blending = blend;
     gates.forEach((g, k) => { const c = hex(pal[g.key]); uC[k].set(c.r, c.g, c.b).multiplyScalar(v ? .85 : .5 * g.base); });
+    ['brass', 'd1', 'd2', 'd3', 'd4'].forEach((k, i) => uPal[i].copy(hex(pal[k])));
     matMix.uniforms.uBloom.value = v ? .14 : .6;
   }
   function onTheme() {
@@ -304,13 +439,143 @@
   /* ---------------------------------------------------------------- scroll, mouse, camera */
   let docH = 1, zNow = 0, zPrev = 0, fovNow = 54, mx = 0, my = 0, smx = 0, smy = 0, born = 0, introT = still ? 1 : 0;
   const measure = () => { docH = Math.max(1, document.documentElement.scrollHeight - innerHeight); };
-  addEventListener('pointermove', e => { if (e.pointerType === 'touch') return; mx = clamp(e.clientX / vw * 2 - 1, -1, 1); my = clamp(e.clientY / vh * 2 - 1, -1, 1); }, { passive: true });
+
+  /* ---------------------------------------------------------------- the boxes answer to the pointer
+     Move over one (anywhere that is not text or a button) and it springs away from you, twists and flares, the ones around it get a nudge,
+     and when you move off it settles back with a little bounce. A click or a tap sends a bigger ripple through the boxes nearby. */
+  const SOLID = 'a,button,input,label,h1,h2,h3,h4,p,li,small,b,em,i,img,svg,.nav,.lamp,.behind,.card,.front,.door,.corridor,.stack,.lights,.foot,.room,.board';
+  const ptr = { nx: 0, ny: 0, vx: 0, vy: 0, seen: false, air: false, touchAt: -1e9 };
+  const bOff = new Float32Array(NB * 3), bVel = new Float32Array(NB * 3), bTgt = new Float32Array(NB * 3), live = new Set();
+  const STIFF = 95, DAMP = 6.5;                                    // a spring that overshoots a little, so the box settles back with a bounce
+  const rayO = new T.Vector3(), rayD = new T.Vector3(), pv3 = new T.Vector3();
+  const cen = [0, 0, 0], dirA = [0, 0, 0], dirB = [0, 0, 0], lo = [0, 0, 0], ld = [0, 0, 0];
+  let hov = -1;
+  const aim = (e, move) => {
+    const nx = e.clientX / vw * 2 - 1, ny = -(e.clientY / vh * 2 - 1);
+    if (move && ptr.seen) { ptr.vx = ptr.vx * .5 + (nx - ptr.nx) * .5; ptr.vy = ptr.vy * .5 + (ny - ptr.ny) * .5; }   // which way the pointer is travelling
+    ptr.nx = nx; ptr.ny = ny;
+    ptr.air = !(e.target && e.target.closest && e.target.closest(SOLID));
+  };
+  const aimRay = () => { rayO.copy(camera.position); rayD.set(ptr.nx, ptr.ny, .5).unproject(camera).sub(rayO).normalize(); };
+  const centreOf = (i, rest) => {                                  // where box i is right now (the same drift as in the vertex shader); "rest": where it would be without a push
+    const b = all[i], k = U.uTime.value, o = rest ? 0 : 1;
+    cen[0] = b.c[0] + o * bOff[i * 3] + Math.sin(k * .23 + b.p[3] * 9.1) * .12;
+    cen[1] = b.c[1] + o * bOff[i * 3 + 1] + Math.sin(k * .31 + b.p[3] * 6.28) * .18;
+    cen[2] = b.c[2] + o * bOff[i * 3 + 2];
+  };
+  const twistOf = i => Math.hypot(bOff[i * 3], bOff[i * 3 + 1], bOff[i * 3 + 2]) * 1.5 * Math.sign(all[i].a[3]);
+  const unturn = (a, ang, x, y, z, out) => {                       // the vertex shader's turn, run backwards
+    const c = Math.cos(ang), s = -Math.sin(ang), d = a[0] * x + a[1] * y + a[2] * z, k = 1 - c;
+    out[0] = x * c + (a[1] * z - a[2] * y) * s + a[0] * d * k;
+    out[1] = y * c + (a[2] * x - a[0] * z) * s + a[1] * d * k;
+    out[2] = z * c + (a[0] * y - a[1] * x) * s + a[2] * d * k;
+  };
+  function hitT(i, rest) {                                         // how far along the pointer's line of sight box i is hit, or Infinity
+    centreOf(i, rest);
+    const dx = cen[0] - rayO.x, dy = cen[1] - rayO.y, dz = cen[2] - rayO.z, t = dx * rayD.x + dy * rayD.y + dz * rayD.z;
+    if (t < .5 || t > 70) return Infinity;
+    const b = all[i], pad = .06 + t * .004, R = .5 * Math.hypot(b.s[0], b.s[1], b.s[2]) + pad;
+    if (dx * dx + dy * dy + dz * dz - t * t > R * R) return Infinity;
+    const ang = b.p[0] + uSpin.value * b.a[3] + (rest ? 0 : twistOf(i));
+    unturn(b.a, ang, -dx, -dy, -dz, lo); unturn(b.a, ang, rayD.x, rayD.y, rayD.z, ld);
+    let t0 = -1e9, t1 = 1e9;
+    for (let k = 0; k < 3; k++) {
+      const h = b.s[k] * .5 + pad;
+      if (Math.abs(ld[k]) < 1e-9) { if (Math.abs(lo[k]) > h) return Infinity; continue; }
+      let u = (-h - lo[k]) / ld[k], w = (h - lo[k]) / ld[k];
+      if (u > w) { const x = u; u = w; w = x; }
+      t0 = Math.max(t0, u); t1 = Math.min(t1, w);
+      if (t0 > t1) return Infinity;
+    }
+    return t1 < 0 ? Infinity : Math.max(t0, 0);
+  }
+  const pickNearest = () => { let best = -1, bt = Infinity; const n = COUNT[Q]; for (let i = 0; i < n; i++) { const t = hitT(i); if (t < bt) { bt = t; best = i; } } return best; };
+  const awayFrom = (i, out) => {                                   // which way is "away from the pointer" for box i: sideways, out of its line of sight (when the pointer is on its middle: the way the pointer was travelling), and a little deeper
+    centreOf(i);
+    const b = all[i], dx = cen[0] - rayO.x, dy = cen[1] - rayO.y, dz = cen[2] - rayO.z, t = dx * rayD.x + dy * rayD.y + dz * rayD.z;
+    const px = dx - rayD.x * t, py = dy - rayD.y * t, pz = dz - rayD.z * t, pl = Math.hypot(px, py, pz);
+    const k = Math.min(1, pl / (.18 * Math.hypot(b.s[0], b.s[1], b.s[2]) + 1e-4));   // 0: the pointer is on the very middle, 1: clearly to one side of it
+    const m = camera.matrixWorld.elements, sl = Math.hypot(ptr.vx, ptr.vy);
+    let sx = .9, sy = .3, sz = 0;                                  // pointer not moving: any way will do
+    if (sl > 1e-5) { const ux = ptr.vx / sl, uy = ptr.vy / sl; sx = m[0] * ux + m[4] * uy; sy = m[1] * ux + m[5] * uy; sz = m[2] * ux + m[6] * uy; }   // screen right/up -> the world
+    const q = pl > 1e-6 ? k / pl : 0;
+    const ax = px * q + sx * (1 - k) + rayD.x * .3, ay = py * q + sy * (1 - k) + rayD.y * .3, az = pz * q + sz * (1 - k) + rayD.z * .3, l = Math.hypot(ax, ay, az) || 1;
+    out[0] = ax / l; out[1] = ay / l; out[2] = az / l;
+  };
+  const kick = (i, s, d) => {
+    let vx = bVel[i * 3] + d[0] * s, vy = bVel[i * 3 + 1] + d[1] * s, vz = bVel[i * 3 + 2] + d[2] * s;
+    const m = Math.hypot(vx, vy, vz); if (m > 9) { vx *= 9 / m; vy *= 9 / m; vz *= 9 / m; }
+    bVel[i * 3] = vx; bVel[i * 3 + 1] = vy; bVel[i * 3 + 2] = vz; live.add(i);
+  };
+  const ripple = (i, s) => {                                       // the boxes around the one touched get a push too, fading with distance
+    centreOf(i);
+    const cx = cen[0], cy = cen[1], cz = cen[2], R = 3.2, n = COUNT[Q];
+    for (let j = 0; j < n; j++) {
+      if (j === i) continue;
+      centreOf(j);
+      const dx = cen[0] - cx, dy = cen[1] - cy, dz = cen[2] - cz, d = Math.hypot(dx, dy, dz);
+      if (d < R && d > 1e-3) { const f = 1 - d / R; dirB[0] = dx / d; dirB[1] = dy / d; dirB[2] = dz / d; kick(j, s * f * f, dirB); }
+    }
+  };
+  const engage = i => {                                            // the pointer arrives on box i: it is held a little way off while the pointer stays, with a springy kick
+    aimRay(); awayFrom(i, dirA);
+    const sp = Math.min(1, Math.hypot(ptr.vx, ptr.vy) * 14);       // a quick flick of the pointer sends it harder (it bounces more)
+    bTgt[i * 3] = dirA[0] * .5; bTgt[i * 3 + 1] = dirA[1] * .5; bTgt[i * 3 + 2] = dirA[2] * .5;
+    kick(i, 3.2 + 3.2 * sp, dirA); ripple(i, 2 + 2 * sp);
+  };
+  const release = i => { bTgt[i * 3] = bTgt[i * 3 + 1] = bTgt[i * 3 + 2] = 0; live.add(i); };
+  function hoverTick() {
+    let h = -1;
+    if (ptr.seen && ptr.air) {
+      aimRay();
+      // a box that has been pushed away keeps the pointer while it is over where the box is, or where it was (otherwise a small box would dodge, come back, dodge again)
+      h = hov >= 0 && hov < COUNT[Q] && (hitT(hov) < Infinity || hitT(hov, true) < Infinity) ? hov : pickNearest();
+    }
+    if (h === hov) return;
+    if (hov >= 0) release(hov);
+    hov = h;
+    if (h >= 0) engage(h);
+  }
+  function tap() {                                                 // a click or a tap: a bigger kick, and a ripple through the boxes around
+    aimRay(); const h = pickNearest();
+    if (h < 0) return;
+    awayFrom(h, dirA); kick(h, 8, dirA); ripple(h, 5);
+  }
+  function stepBoxes(dt) {                                         // the spring: pulled towards where it should rest, slowed by damping
+    if (!live.size) return;
+    const h = Math.min(dt, .05);
+    for (const i of live) {
+      let e = 0;
+      for (let k = 0; k < 3; k++) {
+        const j = i * 3 + k;
+        bVel[j] += (STIFF * (bTgt[j] - bOff[j]) - DAMP * bVel[j]) * h; bOff[j] += bVel[j] * h;
+        e += Math.abs(bOff[j]) + Math.abs(bVel[j]) + Math.abs(bTgt[j]);
+      }
+      if (e < 2e-3) { for (let k = 0; k < 3; k++) { bOff[i * 3 + k] = 0; bVel[i * 3 + k] = 0; } live.delete(i); aOArr.fill(0, i * 4, i * 4 + 4); }
+      else { aOArr[i * 4] = bOff[i * 3]; aOArr[i * 4 + 1] = bOff[i * 3 + 1]; aOArr[i * 4 + 2] = bOff[i * 3 + 2]; aOArr[i * 4 + 3] = twistOf(i); }
+    }
+    aO.needsUpdate = true;
+  }
+  const screenOf = i => { centreOf(i); pv3.set(cen[0], cen[1], cen[2]).project(camera); return { x: (pv3.x * .5 + .5) * vw, y: (-pv3.y * .5 + .5) * vh, z: pv3.z }; };   // (used by the tests)
+  addEventListener('pointermove', e => {
+    if (e.pointerType === 'touch' || e.timeStamp - ptr.touchAt < 1200) return;   // a finger does not hover, and some browsers make up a mouse move right after a tap
+    mx = clamp(e.clientX / vw * 2 - 1, -1, 1); my = clamp(e.clientY / vh * 2 - 1, -1, 1);
+    aim(e, true); ptr.seen = true;
+  }, { passive: true });
+  addEventListener('pointerdown', e => {
+    if (e.pointerType === 'touch') { ptr.seen = false; ptr.touchAt = e.timeStamp; }   // touch: let go of anything held under a pointer that is not really there
+    aim(e); if (ptr.air && running && !still) tap();
+  }, { passive: true });
+  addEventListener('pointerup', e => { if (e.pointerType === 'touch') ptr.touchAt = e.timeStamp; }, { passive: true });
+  addEventListener('scroll', () => { ptr.air = false; }, { passive: true });   // while the page scrolls the text moves under a resting pointer: wait for it to move again
+  document.documentElement.addEventListener('mouseleave', () => { ptr.seen = false; });
   const scrollP = () => clamp(window.scrollY / docH, 0, 1);
 
   function place(dt, t) {
     const target = CAM_END * scrollP();
     if (dt > 0) zNow += (target - zNow) * (1 - Math.exp(-dt * 4.2));
     const vel = dt > 0 ? (zNow - zPrev) / dt : 0; zPrev = zNow;
+    uSpin.value += dt * (1 + clamp(Math.abs(vel) * .12, 0, 2.5));   // the boxes turn faster while you fly
     const ease = 1 - Math.pow(1 - introT, 3);
     smx += (mx - smx) * (1 - Math.exp(-dt * 3)); smy += (my - smy) * (1 - Math.exp(-dt * 3));
     const calm = still ? 0 : 1;
@@ -374,7 +639,7 @@
       if (flip.t >= 1) { flip = null; matMix.uniforms.uFlash.value = 0; }
     }
     U.uTime.value = t;
-    place(dt, t); draw();
+    place(dt, t); stepBoxes(dt); hoverTick(); draw();
     frames++;
     if (!firstDone) { firstDone = true; root.classList.add('gl-on'); root.dataset.gl = 'on'; }
     // a slow computer asks for less: if frames keep taking too long, draw fewer pixels
@@ -399,5 +664,9 @@
   canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); stop(); root.classList.remove('gl-on'); root.classList.add('gl-off'); root.dataset.gl = 'lost'; });
   canvas.addEventListener('webglcontextrestored', () => { root.classList.remove('gl-off'); resize(); applyLook(light); root.dataset.gl = still ? 'still' : 'on'; root.classList.add('gl-on'); still ? drawOnce() : start(); });
 
-  window.__hall = { get frames() { return frames; }, get quality() { return Q; }, get light() { return light; }, get z() { return zNow; }, get running() { return running; } };
+  window.__hall = {
+    get frames() { return frames; }, get quality() { return Q; }, get light() { return light; }, get z() { return zNow; }, get running() { return running; },
+    get hover() { return hov; }, get moving() { return live.size; }, get boxes() { return COUNT[Q]; }, get air() { return ptr.air; }, get seen() { return ptr.seen; }, screenOf,
+    off: i => [bOff[i * 3], bOff[i * 3 + 1], bOff[i * 3 + 2]]
+  };
 })();
